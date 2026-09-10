@@ -1,0 +1,27 @@
+{
+	"name": "@alxarafe/session",
+	"version": "0.1.0",
+	"description": "Alxarafe JS session: Redis-backed sessions and double-submit CSRF protection",
+	"license": "MIT",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -b"
+	},
+	"dependencies": {
+		"@alxarafe/core": "workspace:*",
+		"connect-redis": "^10.0.0",
+		"express": "5.2.1",
+		"express-session": "^1.19.0",
+		"http-status-codes": "2.3.0",
+		"redis": "^6.2.1"
+	},
+	"devDependencies": {
+		"@types/express": "5.0.3",
+		"@types/express-session": "^1.19.0",
+		"@types/node": "^22.0.0"
+	}
+}

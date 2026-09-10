@@ -1,0 +1,32 @@
+{
+	"name": "@alxarafe/auth",
+	"version": "0.1.0",
+	"description": "Alxarafe JS auth: registration, login, email verification and password reset",
+	"license": "MIT",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -b"
+	},
+	"dependencies": {
+		"@alxarafe/core": "workspace:*",
+		"@alxarafe/database": "workspace:*",
+		"@alxarafe/email": "workspace:*",
+		"@alxarafe/session": "workspace:*",
+		"@alxarafe/users": "workspace:*",
+		"@asteasolutions/zod-to-openapi": "7.3.4",
+		"bcryptjs": "^3.0.3",
+		"express": "5.2.1",
+		"express-session": "^1.19.0",
+		"http-status-codes": "2.3.0",
+		"zod": "3.25.76"
+	},
+	"devDependencies": {
+		"@types/express": "5.0.3",
+		"@types/express-session": "^1.19.0",
+		"@types/node": "^22.0.0"
+	}
+}

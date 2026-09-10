@@ -1,0 +1,23 @@
+{
+	"name": "@alxarafe/database",
+	"version": "0.1.0",
+	"description": "Alxarafe JS database: Prisma schema and PostgreSQL client",
+	"license": "MIT",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -b"
+	},
+	"dependencies": {
+		"@alxarafe/core": "workspace:*",
+		"@prisma/adapter-pg": "^7.10.0",
+		"@prisma/client": "^7.10.0"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"prisma": "^7.10.0"
+	}
+}

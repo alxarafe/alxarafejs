@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Generated Prisma client
+packages/database/src/generated/
+
+# Development email files
+emails/*
+!emails/.gitkeep
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Coverage
+coverage/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
