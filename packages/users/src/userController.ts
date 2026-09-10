@@ -1,10 +1,13 @@
+import { parsePaginationQuery } from "@alxarafe/core";
 import type { Request, RequestHandler, Response } from "express";
 
 import { userService } from "./userService";
 
 class UserController {
-	public getUsers: RequestHandler = async (_req: Request, res: Response) => {
-		const serviceResponse = await userService.findAll();
+	public getUsers: RequestHandler = async (req: Request, res: Response) => {
+		const query = parsePaginationQuery(req.query as Record<string, unknown>);
+		const basePath = `${req.baseUrl}${req.path}`;
+		const serviceResponse = await userService.findAll(query, basePath);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 

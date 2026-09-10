@@ -1,4 +1,4 @@
-import { createApiResponse, validateRequest } from "@alxarafe/core";
+import { createApiResponse, PaginatedListSchema, validateRequest } from "@alxarafe/core";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
@@ -10,13 +10,22 @@ import { GetUserSchema, UserSchema } from "./userModel";
 export const userRegistry = new OpenAPIRegistry();
 export const userRouter: Router = express.Router();
 
+const UserListQuerySchema = z.object({
+	$top: z.coerce.number().int().positive().max(500).optional(),
+	$skip: z.coerce.number().int().min(0).optional(),
+	$count: z.enum(["true", "false"]).optional(),
+	$filter: z.string().optional(),
+	$orderby: z.string().optional(),
+});
+
 userRegistry.register("User", UserSchema);
 
 userRegistry.registerPath({
 	method: "get",
 	path: "/users",
 	tags: ["User"],
-	responses: createApiResponse(z.array(UserSchema), "Success"),
+	request: { query: UserListQuerySchema },
+	responses: createApiResponse(PaginatedListSchema(UserSchema), "Success"),
 });
 
 userRouter.get("/", requireAuth, userController.getUsers);

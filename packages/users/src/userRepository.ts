@@ -1,8 +1,23 @@
 import { type Prisma, prisma, type User } from "@alxarafe/database";
 
+export interface UserListParams {
+	where?: Prisma.UserWhereInput;
+	orderBy?: Prisma.UserOrderByWithRelationInput[];
+	skip?: number;
+	take?: number;
+}
+
 export class UserRepository {
-	async findAllAsync(): Promise<User[]> {
-		return prisma.user.findMany();
+	async findAllAsync(params?: UserListParams): Promise<User[]> {
+		if (!params) {
+			return prisma.user.findMany();
+		}
+		const { where, orderBy, skip, take } = params;
+		return prisma.user.findMany({ skip, take, where, orderBy });
+	}
+
+	async countAsync(where?: Prisma.UserWhereInput): Promise<number> {
+		return prisma.user.count({ where });
 	}
 
 	async findByIdAsync(id: number): Promise<User | null> {
