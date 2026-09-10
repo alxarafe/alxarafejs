@@ -1,0 +1,41 @@
+:host {
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  align-self: center;
+  padding: 2rem;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+.card h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+form {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #c3cad2;
+  border-radius: 6px;
+}
+
+button {
+  margin-top: 0.5rem;
+}

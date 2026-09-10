@@ -1,0 +1,51 @@
+<div class="users">
+  <header class="toolbar">
+    <h1>Usuarios</h1>
+    <button type="button" class="outline" (click)="logout()">Cerrar sesión</button>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Cargando…</p>
+  }
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Verificado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (user of rows(); track user.id) {
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.role }}</td>
+          <td>{{ user.emailVerifiedAt ? 'Sí' : 'No' }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="muted">No hay usuarios</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (pagination(); as pagination) {
+    <footer class="pager">
+      <span class="muted">{{ pagination.count }} usuarios · página {{ pagination.page }}{{ pagination.totalPages ? ' de ' + pagination.totalPages : '' }}</span>
+      <div>
+        <button type="button" [disabled]="!pagination.previousLink" (click)="previousPage()">Anterior</button>
+        <button type="button" [disabled]="!pagination.nextLink" (click)="nextPage()">Siguiente</button>
+      </div>
+    </footer>
+  }
+</div>
