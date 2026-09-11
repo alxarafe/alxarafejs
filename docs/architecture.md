@@ -58,10 +58,17 @@ Todo el backend es **ESM** (`"type": "module"`). Dos perfiles distintos de `tsc`
   `enabledDefault` del manifest. Env: `ALXARAFE_MODULES_ENABLED` y
   `ALXARAFE_MODULES_DISABLED` (separados por coma). Los *packages* no se desactivan.
 - **Carga en `apps/api`**: `createApp()` consulta `getEnabledFeatureModules()` e importa
-  dinámicamente `@alxarafe/<name>`, montando el router en `mountPath` del manifest. Un
-  módulo desactivado **no se importa ni se ejecuta**.
+  cada módulo activo **por ruta del sistema de archivos** (`import(pathToFileURL(mod.directory/server.entry))`,
+  por defecto `dist/index.js`), montando el router exportado en `server.mountPath`.
+  El monorepo no declara dependencia npm de los módulos; el acoplamiento es por
+  directorio `modules/` vía `pnpm-workspace.yaml`. Un módulo desactivado **no se
+  importa ni se ejecuta**.
 
 El grafo de dependencias se testea en `packages/core/src/modules/moduleManager.test.ts`.
+
+La gestión operativa de módulos (instalar, activar, desactivar, desinstalar)
+vive en el paquete `@alxarafe/cli` (`pnpm alxarafe module ...`); los módulos se
+entregan como **git submodules** con su propio repo. Detalle: [modules.md](modules.md).
 
 ## Flujo de una petición
 

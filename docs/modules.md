@@ -1,10 +1,12 @@
-# Módulos del sistema (diseño)
+# Módulos del sistema
 
-> **Estado: en curso.** Ya implementado: `ModuleManager` en `@alxarafe/core`
-> (descubrimiento, validación de dependencias, activación por config/env y carga
-> dinámica de routers en `apps/api`), primer módulo `@alxarafe/contacts`, y
-> composición de Prisma vía symlink. Pendientes: installer CLI, `modules.lock.json`,
-> módulos como git submodules y adaptación dinámica de Prisma/env/web al activar.
+> **Estado:** implementado: `ModuleManager` en `@alxarafe/core` (descubrimiento,
+> validación de dependencias, activación por config/env), `@alxarafe/cli`
+> (listado, validación, enable/disable, add/remove), primer módulo
+> `@alxarafe/contacts` como git submodule, y carga dinámica de routers por
+> ruta en `apps/api`. Pendiente: `modules.lock.json`, ajuste del schema
+> Prisma en enable/disable (symlink se crea/borra solo en add/remove),
+> merge de variables env del manifest y adaptación web.
 
 ## 1. Idea central
 
@@ -12,248 +14,427 @@ Alxarafejs sigue el modelo **"núcleo + plugins"**:
 
 | Directorio | Qué contiene | Naturaleza |
 |---|---|---|
-| `packages/` | **Plataforma**. `core`, `database`, `session`, `users`, `auth`, `email`. | Única verdad. El monorepo no funciona sin ellos. Una sola fuente de cada uno. |
-| `modules/` | **Módulos de negocio opcionales**. `contacts`, `crm`, `billing`... | Extensiones. Independientes, con su propio ciclo de vida y su propia entrega (repo o registro). Se componen al activarlos. |
+| `packages/` | **Plataforma.** `core`, `database`, `session`, `users`, `auth`, `email`. | Única verdad. El monorepo no funciona sin ellos. |
+| `modules/` | **Módulos de negocio opcionales.** `contacts`, `crm`, `billing`... | Extensiones independientes. Cada una con su propio repo y ciclo de vida. Se entregan como git submodule y se activan/desactivan vía CLI. |
 
-Semánticamente un módulo **se comporta como un paquete workspace más**, pero:
+Un módulo **se comporta como un paquete workspace más** (pnpm resuelve sus
+dependencias) pero su ciclo de vida se gestiona de forma declarativa:
 
-- no se considera parte del núcleo,
-- puede **activarse y desactivarse** sin tocar el código de la plataforma,
-- aporta configuración propia que debe adaptarse dinámicamente al activarse o retirarse, siendo lo más crítico el **schema de Prisma**.
+- Se entiende un módulo con su propio repo (git submodule o clonado).
+- Se **activa y desactiva** sin tocar el código fuente de la plataforma.
+- Su schema Prisma se compone automáticamente al estar su fragmento
+  en `packages/database/prisma/models/`.
 
-La frontera es organizativa/semántica: a efectos de pnpm, `modules/*`
-simplemente se añade a `pnpm-workspace.yaml`. Es el **ciclo de vida** y la
-**configuración declarativa** lo que diferencia un módulo de un paquete normal.
+La frontera es organizativa/semántica: `modules/*` entra en
+`pnpm-workspace.yaml` igual que `packages/*`, pero un módulo puede
+desmontarse completo sin afectar al resto.
 
-## 2. Ciclo de vida de un módulo
+---
 
-Cuatro estados, dos "de instalación" y dos "de ejecución":
+## 2. Ciclo de vida
+
+Cuatro comandos, cuatro estados:
 
 ### Instalar (`module add`)
 
-`pnpm alxarafe module add <name> [--from npm|archivo|git]`
+```bash
+pnpm alxarafe module add <nombre> --from <git-url|ruta> [--submodule] [--no-enable]
+```
 
-1. Resuelve el artefacto (registro privado, tarball o repo git — ver §6).
-2. Copia el paquete a `modules/<name>`.
-3. Registra el módulo en el **registro de módulos** (`modules.lock.json`).
-4. Sincroniza sus fragmentos de configuración (Prisma, `.env`) y, si viene
-   **activado** por defecto, ejecuta el arranque de activación (§5).
+1. Clona o copia el módulo en `modules/<nombre>` (con `git submodule add`,
+   `git clone` o copia directa).
+2. Lee y valida `module.json` (nombre del manifest = nombre del módulo).
+3. Si el manifest declara `prisma`, crea un symlink en
+   `packages/database/prisma/models/<nombre>.prisma` apuntando al fragmento
+   del módulo.
+4. Salvo `--no-enable`, registra el módulo como activo en
+   `config/modules.json`.
+5. Ejecuta `pnpm install` (para resolver las dependencias del nuevo módulo).
+6. Compila el módulo (`pnpm --filter <pkgName> run build`) — el loader
+   runtime necesita el `dist/`.
+7. Ejecuta `prisma generate` para componer el cliente con el nuevo fragmento.
 
-### Activar / Desactivar (`module enable|disable`)
+Si falla cualquier paso tras materializar, se revierte (se borra el directorio,
+el submodule y el registro en config).
 
-- **`enable <name>`**: monta lo que el módulo aporta (rutas, fragmento Prisma, `env`).
-- **`disable <name>`**: deja de montarlo.
+### Activar / Desactivar (`module enable` / `module disable`)
 
-**Regla por defecto: desactivar NO borra datos.** Las tablas quedan en la base
-de datos y el modelo sale del cliente Prisma (deja de ser consultable), pero
-la reactivación es inmediata. Borrar tablas solo ocurre cuando se **elimina**
-el módulo con la opción de "desmontar schema".
+```bash
+pnpm alxarafe module enable <nombre>
+pnpm alxarafe module disable <nombre>
+```
+
+- **`enable`**: añade el nombre a `enabled` en `config/modules.json` (y lo
+  elimina de `disabled`).
+- **`disable`**: añade el nombre a `disabled` y lo elimina de `enabled`.
+
+Ambos validan la coherencia del grafo tras el cambio: si desactivar un módulo
+dejaría un módulo activo sin dependencias, se revierte el cambio y se informa
+del error (`MODULE_DEPENDENCY_DISABLED`).
+
+**Regla:** desactivar **no borra datos**. Las tablas permanecen en la base de
+datos y el fragmento Prisma permanece enlazado. La desactivación solo afecta al
+montaje de rutas: el loader de `apps/api` no importa el módulo desactivado.
+
+**Nota de implementación actual:** el symlink Prisma solo se crea y borra en
+`add` / `remove`. El enable/disable únicamente edita la activación. Un módulo
+desactivado sigue teniendo su modelo presente en el cliente Prisma; solo
+desaparece de las rutas HTTP.
 
 ### Desinstalar (`module remove`)
 
-`pnpm alxarafe module remove <name> [--drop-schema]`
+```bash
+pnpm alxarafe module remove <nombre> [--drop-schema]
+```
 
-1. Ejecuta las acciones de desactivación.
-2. Opcionalmente genera una migración que suelta las tablas del módulo (`--drop-schema`).
-3. Quita el paquete de `modules/` y lo borra del registro.
+1. Si el directorio es un git submodule (`[submodule ...]` en `.gitmodules`),
+   ejecuta la secuencia completa de deinit/borrado; si no, borra el directorio.
+2. Elimina `packages/database/prisma/models/<nombre>.prisma` (con `force`,
+   también si el enlace apunta a un destino inexistente).
+3. Limpia `config/modules.json` (elimina el nombre de ambas listas).
+4. Ejecuta `prisma generate` (el cliente Prisma se regenera sin el modelo).
+5. Si se indicó `--drop-schema`, ejecuta
+   `prisma migrate dev --name drop_<nombre>_schema` para crear una migración
+   que elimina las tablas.
+6. Ejecuta `pnpm install` para desvincular el workspace.
+
+**Precaución:** no se puede desinstalar un módulo si otro módulo activo lo
+tiene como dependencia en `dependsOn`. El comando aborta informando de qué
+módulos lo necesitan.
+
+### Estado
 
 ```
 add ──► installed ──► enabled ◄──► disabled ◄──► remove
           │                          │
-          └──────────────────────────┘   (que no borra tablas)
+          └──────────────────────────┘  (desactivar no borra tablas)
 ```
+
+---
 
 ## 3. Estructura de un módulo
 
 ```
-modules/contacts/
-├── module.json           # MANIFEST: declaración de lo que el módulo aporta
-├── package.json          # name: @alxarafe/contacts, build: tsup --dts
+modules/contacts/                 # git submodule → alxarafe/alxarafejs-contacts
+├── module.json                   # MANIFEST: declaración de lo que el módulo aporta
+├── package.json                  # name: @alxarafe/contacts, build: tsup --dts
 ├── tsconfig.json
 ├── prisma/
-│   └── contact.prisma    # fragmento de schema (solo models/enums propios)
+│   └── contact.prisma            # fragmento de schema (solo models/enums propios)
 └── src/
+    ├── contactController.ts
     ├── contactModel.ts
     ├── contactRepository.ts
+    ├── contactRouter.ts          # Express router + OpenAPIRegistry
     ├── contactService.ts
-    ├── contactController.ts
-    ├── contactRouter.ts       # router Express + zod-to-openapi registry
-    └── index.ts               # monta el router, guarda el registry
+    └── index.ts                  # monta el router, exporta registry
 ```
 
-Un módulo replica el patrón de `@alxarafe/users`: modelo Zod/OpenAPI,
-repositorio Prisma, servicio con `ServiceResponse`, controller, router y
-registry. Depende de la plataforma (`core`, `database`, y solo si lo necesita,
-`users` para `requireRole`/`requireAuth`), nunca "hacia abajo".
+El archivo `dist/` se genera con `pnpm --filter @alxarafe/contacts run build`
+(tsup) y **no se versiona en el repo del módulo** (.gitignore). El loader de
+`apps/api` importa `dist/index.js`.
+
+---
 
 ## 4. El manifest (`module.json`)
 
-Es la **fuente de verdad declarativa**. Todo lo demás (Prisma, rutas, web, env)
-se deriva de él, no se reescribe código al instalar.
+Es la **fuente de verdad declarativa**. Todo lo demás se deriva de él.
+
+### Esquema estricto
+
+Solo se permiten estos campos (el validador Zod usa `.strict()`):
+
+```jsonc
+{
+  "name": "contacts",                              // REQUIRED — debe coincidir con el nombre de directorio
+  "version": "1.0.0",                              // REQUIRED
+  "description": "Gestión de contactos",           // OPTIONAL
+  "enabledDefault": true,                          // OPTIONAL (default: true)
+  "dependsOn": ["core", "database", "users"],      // OPTIONAL (default: [])
+  "prisma": {                                      // OPTIONAL — si el módulo aporta fragmento Prisma
+    "fragment": "prisma/contact.prisma",           //   ruta relativa al módulo con el .prisma
+    "models": ["Contact", "Address", "ChannelType", "Channel"]  //   modelos del módulo (para docs)
+  },
+  "server": {                                      // OPTIONAL — si el módulo monta un router HTTP
+    "mountPath": "/contacts",                      //   app.use(mountPath, router)
+    "entry": "dist/index.js",                      //   OPTIONAL (default: dist/index.js) — archivo a importar en runtime
+    "routerExport": "contactRouter",               //   OPTIONAL (default: "router") — nombre del export del Express Router
+    "registryExport": "contactRegistry"            //   OPTIONAL — nombre del export del OpenAPIRegistry
+  }
+}
+```
+
+### Ejemplo real (contacts)
 
 ```jsonc
 {
   "name": "contacts",
-  "version": "1.0.0",
-  "description": "Gestión de contactos",
-  "enabledDefault": true,                 // si se activa al instalarse
-
+  "version": "0.1.0",
+  "description": "Agenda de contactos: personas con direcciones y canales de contacto",
+  "enabledDefault": true,
+  "dependsOn": ["core", "database", "users"],
   "prisma": {
-    "fragment": "prisma/contact.prisma",  // fragmento a componer
-    "models": ["Contact"]                 // para validación de dependencias
+    "fragment": "prisma/contact.prisma",
+    "models": ["Contact", "Address", "ChannelType", "Channel"]
   },
-
   "server": {
-    "mountPath": "/contacts",             // app.use("/contacts", ...)
-    "entry": "src/index.ts",              // referencia (build/dev)
-    "routerExport": "contactRouter",      // export que expone el Express Router
-    "registryExport": "contactRegistry"   // export opcional con el OpenAPIRegistry
-  },
-
-  "env": {
-    "CONTACTS_MAX_PER_PAGE": { "default": "200" } // vars que se fusionan en .env
-  },
-
-  "dependsOn": ["users"]                 // paquetes/módulos que deben existir y estar activos
+    "mountPath": "/contacts",
+    "entry": "dist/index.js",
+    "routerExport": "contactRouter",
+    "registryExport": "contactRegistry"
+  }
 }
 ```
 
-### Convenciones (por hacerse cumplir en el installer/CI)
+### Convenciones
 
-- El fragmento Prisma solo declara `model`/`enum` del módulo; nunca `generator` ni `datasource`.
-- El nombre de modelo está prefijado (`Contact`, no `ContactPhones`) para evitar colisiones entre módulos.
-- `mountPath` no puede chocar con rutas de la plataforma ni de otro módulo activo.
-- Se exige cobertura de tests en el repo del módulo antes de publicarlo.
+- `name` del manifest **debe ser igual** al nombre del directorio (y al
+  nombre del submodule).
+- El fragmento Prisma solo declara `model`/`enum` propios; nunca `generator`
+  ni `datasource`.
+- `mountPath` no puede colisionar con rutas de la plataforma ni de otro módulo
+  activo.
+- El `entry` se resuelve relativo al directorio del módulo: se usan paths
+  internos al módulo (`dist/index.js`); el monorepo **nunca depende del
+  paquete npm** del módulo.
+
+---
 
 ## 5. Adaptación dinámica de configuraciones
 
-El principio: **configuración derivada del manifest, consumo declarativo, cero reescritura de código fuente**. Cada consumidor lee estado actualizado (del `modules.lock.json` o de `ALXARAFE_MODULES_ENABLED` / `ALXARAFE_MODULES_DISABLED`) en tiempo de carga.
+### a) Prisma (schema multi-archivo)
 
-### a) Prisma (la pieza crítica)
-
-Prisma soporta **schema multi-archivo** (GA desde v6.7): con `schema:` apuntando a
-una **carpeta**, combina todos los `.prisma` de forma recursiva y las relaciones
-cruzan archivos sin imports.
-
-Diseño:
+Prisma combina recursivamente todos los `.prisma` de la carpeta configurada
+en `prisma.config.ts` (carpeta, no fichero único — disponible desde Prisma 6.7).
 
 ```
 packages/database/prisma/
-├── schema.prisma           # el que lleva generator (ya está así)
-├── migrations/             # al mismo nivel que schema.prisma (YA está así)
-└── models/                 # sincronizado por el installer
-    ├── user.prisma         #   (fragmentos de la plataforma, hoy dentro de schema.prisma)
-    └── contact.prisma      #   (fragmento del módulo, copiado/symlinkeado)
+├── schema.prisma           # generator + datasource (plataforma)
+├── migrations/
+│   ├── 20260910190000_init/
+│   └── 20260911130500_contacts/
+└── models/
+    └── contact.prisma      # symlink → ../../../../modules/contacts/prisma/contact.prisma
 ```
 
-Cambios necesarios en el repo para soportarlo:
-
-1. `prisma.config.ts`: `schema: "packages/database/prisma"` (carpeta, no fichero).
-2. Mover los modelos de la plataforma a `models/*.prisma` (o mantenerlos en `schema.prisma`, ambas válidas; Prisma combina).
-3. `migrations/` permanece donde está.
-
-Efecto por acción:
-
-| Acción | Qué hace el installer |
+| Acción | Qué ocurre |
 |---|---|
-| `add` (activo) | copia/symlink `modules/contacts/prisma/contact.prisma` → `packages/database/prisma/models/contact.prisma`, `pnpm db:migrate`, `prisma generate` |
-| `enable` | (re)crea el symlink/copia y re-genera (`prisma generate`); si el schema cambió, migración |
-| `disable` | quita el fragmento de `models/` y re-genera el cliente (las tablas se quedan en BD) |
-| `remove --drop-schema` | quita el fragmento + `prisma migrate dev` que suelta las tablas |
+| `module add` (con prisma) | Crea symlink `models/<nombre>.prisma` + `prisma generate` |
+| `module enable` | Solo modifica config/modules.json (el fragmento Prisma permanece) |
+| `module disable` | Solo modifica config/modules.json (el modelo Prisma permanece en el cliente) |
+| `module remove` | Borra symlink + `prisma generate` (el modelo desaparece del cliente) |
+| `module remove --drop-schema` | Lo anterior + genera migración que `DROP TABLE`s |
 
-> Nota: Prisma solo lee ficheros dentro de la carpeta configurada; los `.eml`
-> fragmentos de módulos desactivados deben estar fuera (o sin extensión) para
-> no colarse en el cliente.
+> Pendiente: que `enable`/`disable` también togglen el symlink y ejecuten
+> `prisma generate` para que el cliente Prisma se adapte al 100%.
 
-Relaciones entre fragmentos (módulo ↔ plataforma ↔ otro módulo) funcionan, pero `dependsOn`/`optionalPeer` del manifest protegen de desactivar un módulo del que otro depende.
+Relaciones entre fragmentos (módulo ↔ plataforma) funcionan porque Prisma
+multi-schema resuelve las relaciones cruzadas. `dependsOn` protege de
+desactivar la plataforma que un módulo necesita.
 
 ### b) Routers de la API
 
-**Implementado con el `ModuleManager` de `@alxarafe/core`.** `apps/api/src/app.ts`
-consulta al gestor y monta solo los módulos activos:
+`apps/api/src/app.ts` carga dinámicamente los módulos activos por **ruta de
+archivo**, no por nombre de paquete:
 
 ```
-1. ModuleManager.discover()  → escanea packages/ y modules/ (module.json)
-2. validar grafo (strict)      → dependencias existen, sin ciclos, deps activas
-3. resolver activación         → env > config/modules.json > enabledDefault
-4. por cada módulo activo      → import dinámico de @alxarafe/<name>
-5. app.use(module.mountPath, entry[routerExport])
+ModuleManager.getEnabledFeatureModules()
+  → por cada módulo:
+    1. resolver entry = modules/<nombre>/<server.entry> (dist/index.js)
+    2. import(pathToFileURL(entry))
+    3. app.use(server.mountPath, entry[server.routerExport])
 ```
 
-Los módulos de la plataforma (`/auth`, `/users`) siguen montados estáticamente en
-`app.ts`. `config/modules.json` permite desactivar módulos sin tocar código:
-`{ "enabled": [], "disabled": ["contacts"] }`.
+El monorepo **no declara dependencia npm** de ningún módulo; el acoplamiento
+es puramente por directorio (`modules/`) y por el manifest.
 
-### c) Env
+### c) Configuración de activación
 
-A la instalación, el manifest `env` se fusiona en `.env` **solo si no existen** las claves (no se pisan valores del operador). `@alxarafe/core` ya valida env con Zod; cada módulo valida sus propias claves (gateway de Zod por módulo).
-
-### d) Web (Angular)
-
-El cliente (`apps/web`) consume el mismo registro: rutas lazy (`loadChildren`) y menús derivados de los módulos activos. La UI de un módulo desactivado desaparece sin recompilar nada.
-
-### e) Registro de módulos: `modules.lock.json`
+La activación se almacena en `config/modules.json`:
 
 ```jsonc
 {
-  "modules": [
-    {
-      "name": "contacts",
-      "state": "enabled",          // enabled | disabled | installed
-      "source": { "type": "tarball" | "git" | "local", "ref": "..." },
-      "installedAt": "2026-09-10T12:00:00Z",
-      "version": "1.0.0"
-    }
-  ]
+  "enabled": ["contacts"],
+  "disabled": []
 }
 ```
 
-La lista **activa** también se expone como `ALXARAFE_MODULES_ENABLED` / `ALXARAFE_MODULES_DISABLED` (sobrescribible a mano: desactivar "a fuego" sin tocar el lock). Ambos se reconcilian en el arranque.
+Prioridad (de mayor a menor):
 
-## 6. Entrega del paquete (mecanismo `add`)
+1. Variables de entorno `ALXARAFE_MODULES_ENABLED` /
+   `ALXARAFE_MODULES_DISABLED` (separados por coma).
+2. `config/modules.json`.
+3. `enabledDefault` del manifest.
 
-Tres fuentes posibles, decisión pendiente:
+Los **packages** (`packages/*`) siempre están activos; no se pueden desactivar.
 
-| Fuente | Instalación | Pros | Contras |
-|---|---|---|---|
-| **Registro privado** (GitHub Packages / Verdaccio) | `pnpm alxarafe module add contacts` por versión | semver limpio, reproducible | hay que operar el registro; el fragmento Prisma debe viajar en el tarball |
-| **Git (tag)** | clona el repo y lo compone | historia propia, sin infraestructura | pinning por tag/commit; build previo al copiar |
-| **Submodule** | `git submodule add` → ya es workspace | desarrollo 100% separado con su CI | se "trae" el módulo, no se "instala"; el lock y el submodule conviven |
+> Pendiente: `modules.lock.json` para registrar versión instalada, fuente y
+> marca temporal. Actualmente `config/modules.json` solo almacena enabled/disabled.
 
-Independientemente de la fuente, el **installer copia el paquete dentro de `modules/`** y muta únicamente: `modules.lock.json`, la carpeta `models/` de Prisma, `.env` (merge no destructivo) y —si el flujo lo requiere— `pnpm-workspace.yaml`. Nunca edita `server.ts`, `prisma.config.ts` ni código de la plataforma.
+### d) Env del manifest (pendiente)
 
-## 7. El installer: `alxarafe module` (por construir)
+El manifest puede declarar variables de entorno propias que se fusionarían en
+`.env` de forma no destructiva (solo si no existen). Esto aún no está
+implementado; cada módulo valida sus propias variables al arrancar.
 
-Dentro de un paquete `@alxarafe/cli` (o script en `apps/tooling`), exponer:
+---
 
+## 6. Entrega del módulo (git submodule)
+
+La forma actual de entregar módulos es como **git submodule**: cada módulo
+tiene su propio repositorio en GitHub, y el monorepo lo referencia como
+submodule.
+
+### Publicar un módulo
+
+```bash
+# 1. Crear el repo en GitHub (vacío)
+
+# 2. Dentro del módulo (carpeta con module.json, package.json, src/, prisma/):
+cd modules/<nombre>
+git init -b main
+git add -A
+git commit -m "feat: <nombre> module source"
+git remote add origin git@github.com:alxarafe/alxarafejs-<nombre>.git
+git push -u origin main
 ```
-alxarafe module add      <name> [--source registry|git|file] [--no-enable]
-alxarafe module remove   <name> [--drop-schema]
-alxarafe module enable   <name>
-alxarafe module disable  <name>
-alxarafe module list            # estado de todos los módulos
-alxarafe module validate <name> # comprueba manifest, colisiones, dependsOn
+
+El `.gitignore` del módulo debe ignorar `node_modules/`, `dist/` y `.env`.
+
+### Anclar como submodule (desde el monorepo)
+
+```bash
+# Si la carpeta modules/<nombre> ya existe sin ser submodule:
+rm -rf modules/<nombre>
+
+# Anclar:
+git submodule add git@github.com:alxarafe/alxarafejs-<nombre>.git modules/<nombre>
 ```
 
-Flujo común de cada comando: **validate → mutate lock/env/prisma → migrate/generate → informar**.
+Esto crea:
+- `.gitmodules` con la entrada del submodule.
+- Un gitlink (`160000`) en el índice que apunta al commit actual del submodule.
+- `modules/<nombre>/` con el checkout del repo remoto.
 
-> `list` y `validate` ya existen como API del `ModuleManager` (`all`, `enabled`,
-> `packages`, `modules`, `getEnabledFeatureModules`, `isEnabled`), con tests en
-> `packages/core/src/modules/moduleManager.test.ts`. El CLI los envolverá.
+El `pnpm install` postinstall genera el cliente Prisma y resuelve las
+dependencias del nuevo workspace.
 
-## 8. Decisiones de diseño fijadas (recomendadas)
+### Clonar el monorepo con submodules
+
+```bash
+# Al clonar:
+git clone --recurse-submodules git@github.com:alxarafe/alxarafejs.git
+
+# Si ya clonaste sin --recurse-submodules:
+git submodule update --init --recursive
+```
+
+### Actualizar un submodule
+
+```bash
+cd modules/contacts
+git pull origin main
+cd ../..
+# Registrar el nuevo commit en el monorepo:
+git add modules/contacts
+git commit -m "chore: bump contacts submodule to <commit>"
+```
+
+### Eliminar un submodule
+
+```bash
+pnpm alxarafe module remove <nombre>
+```
+
+El CLI ejecuta internamente:
+```
+git submodule deinit -f -- modules/<nombre>
+# edita .gitmodules eliminando la entrada
+git add .gitmodules
+git rm --cached -f modules/<nombre>
+rm -rf .git/modules/<nombre>
+rm -rf modules/<nombre>
+# + borra symlink Prisma + limpia config + prisma generate
+```
+
+---
+
+## 7. CLI: `alxarafe module`
+
+Paquete `@alxarafe/cli` en `packages/cli/`, ejecutable vía `pnpm alxarafe`.
+
+### Comandos
+
+| Comando | Descripción |
+|---|---|
+| `module list` | Lista packages y módulos con su estado (activo/inactivo, dependencias, mountPath) |
+| `module validate [nombre]` | Valida manifiestos y grafo de dependencias. Sin argumentos valida todo el workspace; con nombre valida un módulo concreto |
+| `module enable <nombre>` | Añade el módulo a `config/modules.json` enabled (valida que no rompa el grafo) |
+| `module disable <nombre>` | Añade el módulo a config/modules.json disabled (falla si otro módulo activo lo necesita) |
+| `module add <nombre> --from <url\|ruta> [--submodule] [--no-enable]` | Materializa el módulo, enlaza su fragment Prisma, lo activa, compila y genera el cliente Prisma |
+| `module remove <nombre> [--drop-schema]` | Desinstala el módulo (submodule o directorio), elimina symlink Prisma, limpia config, regenera el cliente. `--drop-schema` crea migración que elimina las tablas |
+
+### Opciones
+
+| Flag | Usado en | Descripción |
+|---|---|---|
+| `--from <url\|ruta>` | `add` | Fuente del módulo: URL git (ssh/https) o ruta local |
+| `--submodule` | `add` | Usa `git submodule add` en lugar de `git clone` o copia |
+| `--no-enable` | `add` | Instala sin añadir a config/modules.json (módulo queda instalado pero inactivo) |
+| `--drop-schema` | `remove` | Genera migración Prisma que elimina las tablas del módulo |
+| `-h, --help` | cualquier | Muestra la ayuda |
+
+### Ejemplos de uso
+
+```bash
+# Ver el estado actual
+pnpm alxarafe module list
+
+# Instalar un módulo nuevo desde GitHub (como submodule)
+pnpm alxarafe module add contacts --from git@github.com:alxarafe/alxarafejs-contacts.git --submodule
+
+# Activar / desactivar
+pnpm alxarafe module disable contacts
+pnpm alxarafe module enable contacts
+
+# Validar el grafo
+pnpm alxarafe module validate        # todo
+pnpm alxarafe module validate contacts
+
+# Desinstalar (conservando tablas)
+pnpm alxarafe module remove contacts
+
+# Desinstalar y borrar las tablas
+pnpm alxarafe module remove contacts --drop-schema
+```
+
+### Requisitos
+
+- Ejecutar desde la raíz del workspace (donde está `pnpm-workspace.yaml`).
+- Archivo `.env` válido (core valida `DATABASE_URL` al importarse).
+- PostgreSQL y Redis en ejecución (solo para comandos que ejecutan
+  `prisma generate` o `prisma migrate`).
+
+---
+
+## 8. Decisiones de diseño fijadas
 
 1. **`modules/` = extensiones, `packages/` = plataforma.** Separación semántica; ambas son workspaces.
-2. **Desactivar NO borra tablas**; solo saca el modelo del cliente Prisma y deja de montar rutas. Borrar requiere `remove --drop-schema`.
-3. **Configuración declarativa derivada del manifest**; el installer nunca reescribe código fuente.
-4. **El fragmento Prisma de un módulo viaja con el módulo** y se compone en `packages/database/prisma/models/` vía multi-schema.
-5. **`dependsOn` se valida en el `ModuleManager`** (existencia + activación) antes de montar; `optionalPeer` queda pendiente.
-6. **Merge de env no destructivo**: las claves del manifest solo se añaden si no existen.
+2. **Desactivar NO borra tablas.** Solo se deja de montar rutas. Requiere `remove --drop-schema` para eliminar.
+3. **Configuración declarativa derivada del manifest.** El installer nunca reescribe código fuente.
+4. **El fragmento Prisma viaja con el módulo** y se compone vía symlink en `models/`.
+5. **`dependsOn` se valida en el `ModuleManager`** (existencia + activación de deps) antes de montar; error inmediato si no se cumple.
+6. **Los módulos se entregan como git submodule**, no como paquetes npm. Cada módulo tiene su propio repo.
+7. **Carga por ruta** (`import(pathToFileURL(...))`): el monorepo no declara dependencia npm de los módulos; el acoplamiento es por directorio `modules/`.
+8. **Precedencia de activación**: env → config/modules.json → enabledDefault.
 
-## 9. Preguntas abiertas
+---
 
-- ¿Desplazamos ya los modelos de la plataforma a `models/*.prisma` o esperamos al primer módulo? → **Resuelto**: plataforma se mantiene en `schema.prisma`; los módulos se añaden como `models/*.prisma` y se componen vía symlink. ✅ (`prisma.config.ts` apunta a carpeta.)
-- ¿Registramos módulos desactivados con su fragmento "apagado" (reversible sin red) o lo sacamos del directorio? (Symlink se presta a desactivar rápido: se quita/recrea el symlink.)
-- ¿Un módulo puede aportar fragmentos a **otros módulos** (p. ej. tablas puente en CRM) o solo al schema combinado?
-- ¿Quién ejecuta el installer en equipos: el dev en local, hook de CI, o ambos?
-- ¿El web (Angular) consume el registro en build-time (genera rutas) o en runtime (lazy por feature)?
+## 9. Preguntas abiertas / pendientes
+
+- **`modules.lock.json`:** registrar versión instalada, fuente (git commit), fecha. Actualmente solo existe `config/modules.json` (enabled/disabled).
+- **Enable/disable con toggling Prisma:** la desactivación completa sacaría el modelo del cliente Prisma (requiere symlink toggle + generate). Actualmente el modelo permanece siempre que el módulo esté instalado.
+- **Merge de env del manifest:** variables de entorno del módulo que se fusionan en `.env` de forma no destructiva. No implementado.
+- **Web (Angular):** adaptación dinámica de rutas lazy y menús según módulos activos.
+- **CI del submodule:** test automático en el repo del módulo antes de publicar.
+- **Otras fuentes de entrega:** registro npm privado, tarballs, Docker. Pendiente.

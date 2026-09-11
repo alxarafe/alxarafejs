@@ -9,6 +9,10 @@
 ## Puesta en marcha
 
 ```bash
+git clone --recurse-submodules git@github.com:alxarafe/alxarafejs.git   # incluye modules/* (submodules)
+# si ya clonaste sin --recurse-submodules:
+git submodule update --init --recursive
+
 pnpm install              # instala dependencias y genera el cliente Prisma (postinstall)
 cp .env.example .env      # ajusta conexiones/servicios si hace falta
 pnpm db:migrate           # crea/esquematiza la base de datos
@@ -20,6 +24,26 @@ Cliente (opcional):
 ```bash
 pnpm --filter @alxarafe/web start   # http://localhost:4200, proxy /api → 8080
 ```
+
+## Módulos (plugins)
+
+Los módulos de negocio (`modules/*`) se entregan como **git submodules** y se
+gestionan con el CLI de `@alxarafe/cli`. Documentación completa:
+[docs/modules.md](modules.md).
+
+```bash
+pnpm alxarafe module list                        # ver packages y módulos con su estado
+pnpm alxarafe module validate [nombre]           # validar manifiestos y grafo de dependencias
+pnpm alxarafe module enable <nombre>             # activar un módulo
+pnpm alxarafe module disable <nombre>            # desactivar un módulo
+pnpm alxarafe module add <nombre> --from <url|ruta> [--submodule] [--no-enable]
+                                                 # instalar un módulo
+pnpm alxarafe module remove <nombre> [--drop-schema]  # desinstalar (y opcionalmente borrar tablas)
+```
+
+> El submodule actual es `modules/contacts` (repo `alxarafe/alxarafejs-contacts`).
+> Los módulos requieren estar **compilados** (`dist/` generado en `add`) para
+> que `apps/api` los monte por ruta.
 
 ## Variables de entorno (`.env`)
 
