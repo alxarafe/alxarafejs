@@ -61,8 +61,10 @@ van con sesión (logout, resend, forgot, reset) incluyen la cabecera
 | 51 | Get user | Detalle del usuario de la sesión |
 
 El flujo de registro/verificación y el de reset requieren el transporte de
-email **a fichero** (deja `SMTP_HOST` vacío en `.env`) porque el token se
-lee desde `emails/*.eml` vía `/auth/dev/email-tokens` (solo en desarrollo).
+email **a fichero** (deja `SMTP_HOST` vacío en `.env`). Con `pnpm test:bruno`
+el runner escribe los `.eml` en un `EMAILS_DIR` temporal (limpio al terminar) y
+el token se lee vía `/auth/dev/email-tokens`; en un run manual contra tu dev
+los emails van a `emails/*.eml`.
 
 Detalles de implementación y ejecución de tests (automatizados y Bruno) en
 [`docs/testing.md`](../../../docs/testing.md).

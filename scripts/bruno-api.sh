@@ -9,9 +9,11 @@
 #         · módulos activos según config/modules.json (modules/<módulo>/bruno/*)
 #   BASE_URL=... EMAIL=... PASSWORD=... ./scripts/bruno-api.sh
 #
-# Requiere: PostgreSQL y Redis en marcha, migraciones aplicadas y las
-# credenciales EMAIL/PASSWORD del entorno local.bru correspondientes a un
-# usuario existente.
+# Requiere: PostgreSQL y Redis en marcha. Al arrancar su propia API prepara
+# automáticamente una BD de test dedicada (TEST_DATABASE_URL, vía
+# scripts/bruno-db.sh) y aísla Redis y emails — no toca la BD de desarrollo
+# (detalles en docs/testing.md). Si reutilizas una API externa (BASE_URL ya
+# responde), esa API y sus recursos deben estar listos, sin aislamiento.
 #
 # Código de salida: 0 solo si TODAS las colecciones terminan OK; 1 si alguna
 # falla; 2 si no hay colecciones que ejecutar o la ruta no existe.
