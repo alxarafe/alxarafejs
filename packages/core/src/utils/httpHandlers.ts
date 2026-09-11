@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import type { ZodError, ZodSchema } from "zod";
 
-import { ServiceResponse } from "../models/serviceResponse";
+import { ServiceResponse } from "../models/serviceResponse.js";
 
 export const validateRequest = (schema: ZodSchema) => async (req: Request, res: Response, next: NextFunction) => {
 	try {

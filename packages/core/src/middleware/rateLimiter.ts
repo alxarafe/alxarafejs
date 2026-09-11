@@ -1,6 +1,6 @@
 import { rateLimit } from "express-rate-limit";
 
-import { env } from "../config/env";
+import { env } from "../config/env.js";
 
 export const rateLimiter = rateLimit({
 	legacyHeaders: true,

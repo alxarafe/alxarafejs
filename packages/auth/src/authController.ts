@@ -2,7 +2,7 @@ import { env, generateCsrfToken } from "@alxarafe/core";
 import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import { authService } from "./authService";
+import { authService } from "./authService.js";
 
 async function establishSession(req: Request, userId: number): Promise<void> {
 	await new Promise<void>((resolve, reject) => {

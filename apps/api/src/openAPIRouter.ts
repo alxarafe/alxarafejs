@@ -1,14 +1,16 @@
 import express, { type Request, type Response, type Router } from "express";
 import swaggerUi from "swagger-ui-express";
 
-import { generateOpenAPIDocument } from "./openAPIDocumentGenerator";
+import type { OpenAPIDocument } from "./openAPIDocumentGenerator.js";
 
-export const openAPIRouter: Router = express.Router();
-const openAPIDocument = generateOpenAPIDocument();
+export function createOpenAPIRouter(openAPIDocument: OpenAPIDocument): Router {
+	const router: Router = express.Router();
 
-openAPIRouter.get("/swagger.json", (_req: Request, res: Response) => {
-	res.setHeader("Content-Type", "application/json");
-	res.send(openAPIDocument);
-});
+	router.get("/swagger.json", (_req: Request, res: Response) => {
+		res.setHeader("Content-Type", "application/json");
+		res.send(openAPIDocument);
+	});
 
-openAPIRouter.use("/", swaggerUi.serve, swaggerUi.setup(openAPIDocument));
+	router.use("/", swaggerUi.serve, swaggerUi.setup(openAPIDocument));
+	return router;
+}

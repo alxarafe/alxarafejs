@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPageLink, buildPaginationMeta, parsePaginationQuery } from "./pagination";
+import { buildPageLink, buildPaginationMeta, parsePaginationQuery } from "./pagination.js";
 
 describe("parsePaginationQuery", () => {
 	it("uses defaults when no options are provided", () => {

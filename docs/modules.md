@@ -1,8 +1,10 @@
 # Módulos del sistema (diseño)
 
-> **Estado: propuesta de diseño, NO implementado.** Este documento describe cómo alxarafejs podría
-> extender el monorepo con módulos de negocio (contactos, CRM, facturación...) desarrollados fuera
-> del núcleo y compuestos de forma dinámica (instalar / activar / desactivar / eliminar).
+> **Estado: en curso.** Ya implementado: `ModuleManager` en `@alxarafe/core`
+> (descubrimiento, validación de dependencias, activación por config/env y carga
+> dinámica de routers en `apps/api`), primer módulo `@alxarafe/contacts`, y
+> composición de Prisma vía symlink. Pendientes: installer CLI, `modules.lock.json`,
+> módulos como git submodules y adaptación dinámica de Prisma/env/web al activar.
 
 ## 1. Idea central
 
@@ -66,7 +68,7 @@ add ──► installed ──► enabled ◄──► disabled ◄──► rem
 ```
 modules/contacts/
 ├── module.json           # MANIFEST: declaración de lo que el módulo aporta
-├── package.json          # name: @alxarafe/contacts, build: tsc -b
+├── package.json          # name: @alxarafe/contacts, build: tsup --dts
 ├── tsconfig.json
 ├── prisma/
 │   └── contact.prisma    # fragmento de schema (solo models/enums propios)
@@ -103,15 +105,16 @@ se deriva de él, no se reescribe código al instalar.
 
   "server": {
     "mountPath": "/contacts",             // app.use("/contacts", ...)
-    "entry": "src/index.ts"               // exporta { contactsRouter, contactsRegistry }
+    "entry": "src/index.ts",              // referencia (build/dev)
+    "routerExport": "contactRouter",      // export que expone el Express Router
+    "registryExport": "contactRegistry"   // export opcional con el OpenAPIRegistry
   },
 
   "env": {
     "CONTACTS_MAX_PER_PAGE": { "default": "200" } // vars que se fusionan en .env
   },
 
-  "dependsOn": ["users"],                 // módulos/paquetes que requieren estar activos
-  "optionalPeer": ["crm"]                 // integraciones opcionales con otros módulos
+  "dependsOn": ["users"]                 // paquetes/módulos que deben existir y estar activos
 }
 ```
 
@@ -124,7 +127,7 @@ se deriva de él, no se reescribe código al instalar.
 
 ## 5. Adaptación dinámica de configuraciones
 
-El principio: **configuración derivada del manifest, consumo declarativo, cero reescritura de código fuente**. Cada consumidor lee estado actualizado (del `modules.lock.json` o del `MODULES_ENABLED`) en tiempo de carga.
+El principio: **configuración derivada del manifest, consumo declarativo, cero reescritura de código fuente**. Cada consumidor lee estado actualizado (del `modules.lock.json` o de `ALXARAFE_MODULES_ENABLED` / `ALXARAFE_MODULES_DISABLED`) en tiempo de carga.
 
 ### a) Prisma (la pieza crítica)
 
@@ -166,15 +169,20 @@ Relaciones entre fragmentos (módulo ↔ plataforma ↔ otro módulo) funcionan,
 
 ### b) Routers de la API
 
-`apps/api/src/server.ts` deja de importar routers "a mano" para los módulos y los deriva del registro:
+**Implementado con el `ModuleManager` de `@alxarafe/core`.** `apps/api/src/app.ts`
+consulta al gestor y monta solo los módulos activos:
 
 ```
-1. leer modules.lock.json + MODULES_ENABLED
-2. para cada módulo activo → import dinámico de module.json.server.entry
-3. app.use(module.mountPath, módulo.router)
+1. ModuleManager.discover()  → escanea packages/ y modules/ (module.json)
+2. validar grafo (strict)      → dependencias existen, sin ciclos, deps activas
+3. resolver activación         → env > config/modules.json > enabledDefault
+4. por cada módulo activo      → import dinámico de @alxarafe/<name>
+5. app.use(module.mountPath, entry[routerExport])
 ```
 
-Los módulos de la plataforma (`/auth`, `/users`) siguen montados estáticamente como hoy.
+Los módulos de la plataforma (`/auth`, `/users`) siguen montados estáticamente en
+`app.ts`. `config/modules.json` permite desactivar módulos sin tocar código:
+`{ "enabled": [], "disabled": ["contacts"] }`.
 
 ### c) Env
 
@@ -200,7 +208,7 @@ El cliente (`apps/web`) consume el mismo registro: rutas lazy (`loadChildren`) y
 }
 ```
 
-La lista **activa** también se expone como `MODULES_ENABLED` en `.env` (sobrescribible a mano: desactivar "a fuego" sin tocar el lock). Ambos se reconcilian en el arranque.
+La lista **activa** también se expone como `ALXARAFE_MODULES_ENABLED` / `ALXARAFE_MODULES_DISABLED` (sobrescribible a mano: desactivar "a fuego" sin tocar el lock). Ambos se reconcilian en el arranque.
 
 ## 6. Entrega del paquete (mecanismo `add`)
 
@@ -229,18 +237,22 @@ alxarafe module validate <name> # comprueba manifest, colisiones, dependsOn
 
 Flujo común de cada comando: **validate → mutate lock/env/prisma → migrate/generate → informar**.
 
+> `list` y `validate` ya existen como API del `ModuleManager` (`all`, `enabled`,
+> `packages`, `modules`, `getEnabledFeatureModules`, `isEnabled`), con tests en
+> `packages/core/src/modules/moduleManager.test.ts`. El CLI los envolverá.
+
 ## 8. Decisiones de diseño fijadas (recomendadas)
 
 1. **`modules/` = extensiones, `packages/` = plataforma.** Separación semántica; ambas son workspaces.
 2. **Desactivar NO borra tablas**; solo saca el modelo del cliente Prisma y deja de montar rutas. Borrar requiere `remove --drop-schema`.
 3. **Configuración declarativa derivada del manifest**; el installer nunca reescribe código fuente.
 4. **El fragmento Prisma de un módulo viaja con el módulo** y se compone en `packages/database/prisma/models/` vía multi-schema.
-5. **`dependsOn` + `optionalPeer`** validan el grafo antes de activar (evita desactivar dependencias en uso).
+5. **`dependsOn` se valida en el `ModuleManager`** (existencia + activación) antes de montar; `optionalPeer` queda pendiente.
 6. **Merge de env no destructivo**: las claves del manifest solo se añaden si no existen.
 
 ## 9. Preguntas abiertas
 
-- ¿Desplazamos ya los modelos de la plataforma a `models/*.prisma` o esperamos al primer módulo?
+- ¿Desplazamos ya los modelos de la plataforma a `models/*.prisma` o esperamos al primer módulo? → **Resuelto**: plataforma se mantiene en `schema.prisma`; los módulos se añaden como `models/*.prisma` y se componen vía symlink. ✅ (`prisma.config.ts` apunta a carpeta.)
 - ¿Registramos módulos desactivados con su fragmento "apagado" (reversible sin red) o lo sacamos del directorio? (Symlink se presta a desactivar rápido: se quita/recrea el symlink.)
 - ¿Un módulo puede aportar fragmentos a **otros módulos** (p. ej. tablas puente en CRM) o solo al schema combinado?
 - ¿Quién ejecuta el installer en equipos: el dev en local, hook de CI, o ambos?

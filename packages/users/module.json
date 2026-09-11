@@ -1,0 +1,7 @@
+{
+	"name": "users",
+	"version": "0.1.0",
+	"description": "Gestión de usuarios: modelo, repositorio, servicio y controlador",
+	"enabledDefault": true,
+	"dependsOn": ["core", "database", "session"]
+}

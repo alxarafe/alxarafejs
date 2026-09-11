@@ -1,0 +1,7 @@
+{
+	"name": "session",
+	"version": "0.1.0",
+	"description": "Sesiones HTTP respaldadas por Redis",
+	"enabledDefault": true,
+	"dependsOn": ["core"]
+}

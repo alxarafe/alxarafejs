@@ -1,0 +1,7 @@
+{
+	"name": "database",
+	"version": "0.1.0",
+	"description": "Acceso a datos: cliente Prisma y composición de esquemas por fragmentos",
+	"enabledDefault": true,
+	"dependsOn": ["core"]
+}

@@ -1,16 +1,16 @@
-export { env } from "./config/env";
-export { logger } from "./logger";
-export { errorHandler } from "./middleware/errorHandler";
-export { rateLimiter } from "./middleware/rateLimiter";
-export { default as requestLogger } from "./middleware/requestLogger";
-export { createApiResponse } from "./models/apiResponse";
+export { env } from "./config/env.js";
+export { logger } from "./logger.js";
+export { errorHandler } from "./middleware/errorHandler.js";
+export { rateLimiter } from "./middleware/rateLimiter.js";
+export { default as requestLogger } from "./middleware/requestLogger.js";
+export { createApiResponse } from "./models/apiResponse.js";
 export type {
 	BuildPageLinkOptions,
 	BuildPaginationMetaOptions,
 	PaginatedList,
 	PaginationMeta,
 	PaginationQuery,
-} from "./models/pagination";
+} from "./models/pagination.js";
 export {
 	buildPageLink,
 	buildPaginationMeta,
@@ -19,10 +19,14 @@ export {
 	PaginatedListSchema,
 	PaginationSchema,
 	parsePaginationQuery,
-} from "./models/pagination";
-export { ServiceResponse, ServiceResponseSchema } from "./models/serviceResponse";
-export { validateRequest } from "./utils/httpHandlers";
-export type { FilterCondition, FilterGroup, FilterNode, FilterOperator, FilterValue } from "./utils/odataFilter";
-export { parseFilter } from "./utils/odataFilter";
-export { generateCsrfToken, generateToken, hashToken } from "./utils/tokens";
-export { commonValidations } from "./utils/validation";
+} from "./models/pagination.js";
+export { ServiceResponse, ServiceResponseSchema } from "./models/serviceResponse.js";
+export type { ModuleKind, ModuleManifest, ModuleUnit } from "./modules/manifest.js";
+export { ModuleManifestSchema, readManifest } from "./modules/manifest.js";
+export type { ModuleErrorCode, ModuleManagerOptions } from "./modules/moduleManager.js";
+export { createModuleManager, ModuleManager, ModuleManagerError } from "./modules/moduleManager.js";
+export { validateRequest } from "./utils/httpHandlers.js";
+export type { FilterCondition, FilterGroup, FilterNode, FilterOperator, FilterValue } from "./utils/odataFilter.js";
+export { parseFilter } from "./utils/odataFilter.js";
+export { generateCsrfToken, generateToken, hashToken } from "./utils/tokens.js";
+export { commonValidations } from "./utils/validation.js";

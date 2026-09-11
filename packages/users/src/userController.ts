@@ -1,7 +1,7 @@
 import { parsePaginationQuery } from "@alxarafe/core";
 import type { Request, RequestHandler, Response } from "express";
 
-import { userService } from "./userService";
+import { userService } from "./userService.js";
 
 class UserController {
 	public getUsers: RequestHandler = async (req: Request, res: Response) => {

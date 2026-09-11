@@ -1,0 +1,7 @@
+{
+	"name": "email",
+	"version": "0.1.0",
+	"description": "Envío de correo electrónico (Nodemailer)",
+	"enabledDefault": true,
+	"dependsOn": ["core"]
+}

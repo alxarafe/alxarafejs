@@ -2,7 +2,9 @@ import { env, logger } from "@alxarafe/core";
 import { prisma } from "@alxarafe/database";
 import { redisClient } from "@alxarafe/session";
 
-import { app } from "./server";
+import { createApp } from "./app.js";
+
+const app = await createApp();
 
 redisClient.on("error", (error) => logger.error({ error: error.message }, "Redis error"));
 redisClient.connect().then(() => {

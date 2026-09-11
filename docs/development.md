@@ -3,7 +3,7 @@
 ## Requisitos
 
 - **Node.js ≥ 23** (ver `.tool-versions`).
-- **pnpm** `10.33.0` (`packageManager`).
+- **pnpm** `12.4.1` (`packageManager`).
 - **PostgreSQL** en `localhost:5433` y **Redis** en `localhost:6379` (por defecto en `.env`).
 
 ## Puesta en marcha
@@ -44,7 +44,7 @@ pnpm --filter @alxarafe/web start   # http://localhost:4200, proxy /api → 8080
 | Script | Descripción |
 |---|---|
 | `pnpm start:dev` | API en dev (tsx watch, recarga en caliente) |
-| `pnpm build` | Compila todos los paquetes (`-r run build`, `tsc -b`) |
+| `pnpm build` | Compila librerías con `tsup --dts` y la API con `tsc -b` (`-r run build`) |
 | `pnpm start:prod` | Ejecuta la compilación de producción (`node apps/api/dist/index.js`) |
 | `pnpm test` | Vitest (passWithNoTests) |
 | `pnpm test:cov` | Cobertura |

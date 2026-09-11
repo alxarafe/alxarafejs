@@ -1,12 +1,12 @@
-export { authController } from "./authController";
-export { authDevRouter } from "./authDevRouter";
+export { authController } from "./authController.js";
+export { authDevRouter } from "./authDevRouter.js";
 export {
 	ForgotPasswordSchema,
 	LoginSchema,
 	RegisterSchema,
 	ResetPasswordSchema,
 	VerifyEmailSchema,
-} from "./authModel";
-export { authRegistry, authRouter } from "./authRouter";
-export { AuthService, appBaseUrl, authService } from "./authService";
-export { TokenRepository } from "./tokenRepository";
+} from "./authModel.js";
+export { authRegistry, authRouter } from "./authRouter.js";
+export { AuthService, appBaseUrl, authService } from "./authService.js";
+export { TokenRepository } from "./tokenRepository.js";

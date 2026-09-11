@@ -4,7 +4,7 @@ import { toPublicUser, type User, UserRepository } from "@alxarafe/users";
 import bcrypt from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
 
-import { TokenRepository } from "./tokenRepository";
+import { TokenRepository } from "./tokenRepository.js";
 
 const BCRYPT_ROUNDS = 12;
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24h

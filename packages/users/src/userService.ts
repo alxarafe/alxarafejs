@@ -3,8 +3,8 @@ import { buildPaginationMeta, logger, parseFilter, ServiceResponse } from "@alxa
 import type { Prisma, User as PrismaUser } from "@alxarafe/database";
 import { StatusCodes } from "http-status-codes";
 
-import type { User } from "./userModel";
-import { UserRepository } from "./userRepository";
+import type { User } from "./userModel.js";
+import { UserRepository } from "./userRepository.js";
 
 export function toPublicUser(user: PrismaUser): User {
 	return {

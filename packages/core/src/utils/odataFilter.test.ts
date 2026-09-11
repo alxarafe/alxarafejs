@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { type FilterGroup, parseFilter } from "./odataFilter";
+import { type FilterGroup, parseFilter } from "./odataFilter.js";
 
 describe("parseFilter", () => {
 	it("parses a simple equality condition", () => {

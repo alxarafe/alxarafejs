@@ -3,9 +3,9 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { requireAuth } from "./guards";
-import { userController } from "./userController";
-import { GetUserSchema, UserSchema } from "./userModel";
+import { requireAuth } from "./guards.js";
+import { userController } from "./userController.js";
+import { GetUserSchema, UserSchema } from "./userModel.js";
 
 export const userRegistry = new OpenAPIRegistry();
 export const userRouter: Router = express.Router();

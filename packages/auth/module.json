@@ -1,0 +1,7 @@
+{
+	"name": "auth",
+	"version": "0.1.0",
+	"description": "Autenticación: registro, login, email, CSRF y reset de contraseña",
+	"enabledDefault": true,
+	"dependsOn": ["core", "database", "email", "session", "users"]
+}

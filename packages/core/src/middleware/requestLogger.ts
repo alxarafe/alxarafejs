@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import pinoHttp from "pino-http";
+import { pinoHttp } from "pino-http";
 
-import { env } from "../config/env";
-import { logger } from "../logger";
+import { env } from "../config/env.js";
+import { logger } from "../logger.js";
 
 const getLogLevel = (status: number) => {
 	if (status >= StatusCodes.INTERNAL_SERVER_ERROR) return "error";

@@ -1,0 +1,7 @@
+{
+	"name": "core",
+	"version": "0.1.0",
+	"description": "Infraestructura compartida: env, logger, HTTP, tokens, validación y gestor de módulos",
+	"enabledDefault": true,
+	"dependsOn": []
+}

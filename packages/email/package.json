@@ -2,14 +2,21 @@
 	"name": "@alxarafe/email",
 	"version": "0.1.0",
 	"description": "Alxarafe JS email: SMTP transport with a file transport fallback for development",
+	"type": "module",
 	"license": "MIT",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
 	"files": [
 		"dist"
 	],
 	"scripts": {
-		"build": "tsc -b"
+		"build": "tsup src/index.ts --dts --format esm --sourcemap"
 	},
 	"dependencies": {
 		"@alxarafe/core": "workspace:*",
@@ -17,6 +24,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22.0.0",
-		"@types/nodemailer": "^8.0.1"
+		"@types/nodemailer": "^8.0.1",
+		"tsup": "^8.5.0"
 	}
 }

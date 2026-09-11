@@ -1,4 +1,4 @@
-import "./session-data";
+import "./session-data.js";
 
-export { csrfProtection } from "./csrf";
-export { redisClient, redisStore, sessionMiddleware } from "./session";
+export { csrfProtection } from "./csrf.js";
+export { redisClient, redisStore, sessionMiddleware } from "./session.js";

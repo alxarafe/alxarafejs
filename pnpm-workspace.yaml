@@ -1,3 +1,21 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "modules/*"
+
+# pnpm 12 supply-chain policy: exempted from the 24h minimumReleaseAge gate.
+# Transitive devDeps of Angular (browserslist tooling) that publish frequently.
+minimumReleaseAgeExclude:
+  - baseline-browser-mapping
+  - update-browserslist-db
+minimumReleaseAgeExcludePrune: true
+
+# Build scripts: true = permitido compilar, false = ignorar.
+allowBuilds:
+  "@prisma/engines": true
+  "@scarf/scarf": true
+  esbuild: true
+  prisma: true
+  "@parcel/watcher": false
+  lmdb: false
+  msgpackr-extract: false

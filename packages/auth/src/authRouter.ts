@@ -5,8 +5,14 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { authController } from "./authController";
-import { ForgotPasswordSchema, LoginSchema, RegisterSchema, ResetPasswordSchema, VerifyEmailSchema } from "./authModel";
+import { authController } from "./authController.js";
+import {
+	ForgotPasswordSchema,
+	LoginSchema,
+	RegisterSchema,
+	ResetPasswordSchema,
+	VerifyEmailSchema,
+} from "./authModel.js";
 
 export const authRegistry = new OpenAPIRegistry();
 export const authRouter: Router = express.Router();

@@ -3,8 +3,8 @@ import { StatusCodes } from "http-status-codes";
 
 import "@alxarafe/session";
 
-import type { UserRole } from "./userModel";
-import { userService } from "./userService";
+import type { UserRole } from "./userModel.js";
+import { userService } from "./userService.js";
 
 export const requireAuth: RequestHandler = async (req, res, next) => {
 	const userId = req.session.userId;
