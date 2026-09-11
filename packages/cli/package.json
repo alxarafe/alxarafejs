@@ -1,0 +1,23 @@
+{
+	"name": "@alxarafe/cli",
+	"version": "0.1.0",
+	"description": "Alxarafe JS CLI: gestiona los módulos (instalar, activar, desactivar, desinstalar) y su integración git como submodulos",
+	"type": "module",
+	"license": "MIT",
+	"bin": {
+		"alxarafe": "dist/cli.js"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsup src/cli.ts --format esm --sourcemap"
+	},
+	"dependencies": {
+		"@alxarafe/core": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"tsup": "^8.5.0"
+	}
+}

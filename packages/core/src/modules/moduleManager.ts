@@ -64,7 +64,7 @@ export interface ModuleManagerOptions {
 // Activation config file & env overrides
 // ---------------------------------------------------------------------------
 
-interface ActivationConfig {
+export interface ActivationConfig {
 	enabled?: string[];
 	disabled?: string[];
 }
@@ -119,7 +119,7 @@ function resolveActivation(
 // ---------------------------------------------------------------------------
 
 function findWorkspaceRoot(startDir: string): string {
-	let dir = startDir;
+	let dir = resolve(startDir);
 	const maxDepth = 30;
 	for (let i = 0; i < maxDepth; i++) {
 		if (existsSync(join(dir, "pnpm-workspace.yaml")) || existsSync(join(dir, ".git"))) return dir;
@@ -352,3 +352,5 @@ export class ModuleManager {
 export function createModuleManager(options: ModuleManagerOptions = {}): ModuleManager {
 	return new ModuleManager(options);
 }
+
+export { findWorkspaceRoot };

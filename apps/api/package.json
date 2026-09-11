@@ -18,7 +18,6 @@
 	},
 	"dependencies": {
 		"@alxarafe/auth": "workspace:*",
-		"@alxarafe/contacts": "workspace:*",
 		"@alxarafe/core": "workspace:*",
 		"@alxarafe/database": "workspace:*",
 		"@alxarafe/email": "workspace:*",

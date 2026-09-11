@@ -23,8 +23,8 @@ export {
 export { ServiceResponse, ServiceResponseSchema } from "./models/serviceResponse.js";
 export type { ModuleKind, ModuleManifest, ModuleUnit } from "./modules/manifest.js";
 export { ModuleManifestSchema, readManifest } from "./modules/manifest.js";
-export type { ModuleErrorCode, ModuleManagerOptions } from "./modules/moduleManager.js";
-export { createModuleManager, ModuleManager, ModuleManagerError } from "./modules/moduleManager.js";
+export type { ActivationConfig, ModuleErrorCode, ModuleManagerOptions } from "./modules/moduleManager.js";
+export { createModuleManager, findWorkspaceRoot, ModuleManager, ModuleManagerError } from "./modules/moduleManager.js";
 export { validateRequest } from "./utils/httpHandlers.js";
 export type { FilterCondition, FilterGroup, FilterNode, FilterOperator, FilterValue } from "./utils/odataFilter.js";
 export { parseFilter } from "./utils/odataFilter.js";

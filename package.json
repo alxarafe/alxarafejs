@@ -25,6 +25,7 @@
 		"postinstall": "prisma generate"
 	},
 	"devDependencies": {
+		"@alxarafe/cli": "workspace:*",
 		"@biomejs/biome": "2.4.9",
 		"@types/node": "^22.0.0",
 		"@types/supertest": "6.0.3",

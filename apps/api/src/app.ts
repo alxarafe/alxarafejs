@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { authDevRouter, authRegistry, authRouter } from "@alxarafe/auth";
 import {
 	createModuleManager,
@@ -50,20 +52,23 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Express
 	app.use("/auth", authRouter);
 	app.use("/users", userRouter);
 
-	// Feature modules: loaded dynamically, only those enabled by the manager
+	// Feature modules: loaded dynamically by path, only those enabled by the manager.
+	// The app does NOT depend on modules at package level; the entry file (server.entry)
+	// is resolved relative to the module directory (a workspace member already built).
 	const registries: OpenAPIRegistry[] = [healthCheckRegistry, authRegistry, userRegistry];
 	for (const mod of moduleManager.getEnabledFeatureModules()) {
 		const serverBlock = mod.server;
 		if (!serverBlock) continue;
 
-		logger.info({ module: mod.name, mountPath: serverBlock.mountPath }, "Mounting module");
-		const entry = (await import(`@alxarafe/${mod.name}`)) as Record<string, unknown>;
+		const entryFile = resolve(mod.directory, serverBlock.entry ?? "dist/index.js");
+		logger.info({ module: mod.name, mountPath: serverBlock.mountPath, entry: entryFile }, "Mounting module");
+		const entry = (await import(pathToFileURL(entryFile).href)) as Record<string, unknown>;
 		const router = entry[serverBlock.routerExport ?? "router"];
 		if (router == null) {
 			throw new ModuleManagerError(
 				"MODULE_ENTRY_INVALID",
-				`El módulo "${mod.name}" no exporta "${serverBlock.routerExport ?? "router"}". Revisa su module.json o su index.ts.`,
-				{ module: mod.name },
+				`El módulo "${mod.name}" no exporta "${serverBlock.routerExport ?? "router"}" en ${entryFile}. Revisa su module.json, compila el módulo (pnpm build) o revisa su entry.`,
+				{ module: mod.name, entry: entryFile },
 			);
 		}
 		app.use(serverBlock.mountPath, router as Router);
