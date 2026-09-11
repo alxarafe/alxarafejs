@@ -32,6 +32,8 @@ const envSchema = z.object({
 	SMTP_USER: z.string().default(""),
 	SMTP_PASS: z.string().default(""),
 	EMAIL_FROM: z.string().email().default("no-reply@alxarafe.com"),
+
+	EMAILS_DIR: z.string().default(""),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

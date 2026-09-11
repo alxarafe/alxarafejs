@@ -208,6 +208,43 @@ siempre sobre el usuario dedicado `NEW_EMAIL` (`RESET_PASSWORD` al resetear).
 Por eso la colección del núcleo usa `NEW_EMAIL` en forgot/reset/relogin y el
 módulo solo hace login con `EMAIL`.
 
+### Aislamiento: BD, Redis y emails de test
+
+Cuando `scripts/bruno-api.sh` arranca su **propia** API (puerto libre), la
+ejecución queda aislada de tu entorno de desarrollo:
+
+- **BD de test dedicada** (`TEST_DATABASE_URL`): el helper `scripts/bruno-db.sh`
+  deriva la URL de `DATABASE_URL` añadiendo el sufijo `_bruno` a la base
+  (p. ej. `alxarafejs` → `alxarafejs_bruno`), la crea si no existe (necesita
+  permiso `CREATEDB`) y sincroniza el esquema con `prisma db push`
+  (núcleo + fragmentos de los módulos activos; idempotente, no usa migraciones
+  porque la de `contacts` no está trackeada). Nada se ejecuta contra la BD de
+  desarrollo. Si ya tienes `TEST_DATABASE_URL` exportada, se respeta tal cual.
+- **Redis aislado**: se usa la misma instancia pero en el índice de base de
+  datos `3` (`redis://host:port/3`), configurable con `BRUNO_REDIS_DB`. Las
+  sesiones del run no ensucian el índice de desarrollo.
+- **Emails a fichero temporal**: `EMAILS_DIR` apunta a un `mktemp -d` (no al
+  `emails/` del repo) que se borra al terminar, junto con la API que se haya
+  arrancado.
+
+Variables útiles:
+
+| Variable | Defecto | Efecto |
+|---|---|---|
+| `TEST_DATABASE_URL` | derivada de `DATABASE_URL` | BD donde se ejecutan las colecciones |
+| `BRUNO_RESET_DB` | `0` | `1` → `db push --force-reset` (vacía y resincroniza la BD de test) |
+| `BRUNO_REDIS_DB` | `3` | índice Redis para el run |
+| `BRUNO_DB_URL` | (alias) | nombre antiguo de `TEST_DATABASE_URL` |
+
+> Nota: `prisma db push` sobre la BD de test requiere consentimiento explícito
+> del operador (bloqueo de Prisma frente a acciones destructivas); el script lo
+> aporta **solo cuando la URL es la BD de test**, nunca con otra.
+
+Si prefieres ejecutar contra una API ya levantada (p. ej. tu dev en `:8080`),
+el aislamiento **no aplica**: el run toca los mismos recursos que esa API
+(BD de desarrollo, Redis del índice normal, `emails/`). Para que sea repetible
+en ese caso, libera el puerto y deja que el script arranque su propia API.
+
 Requisitos: PostgreSQL, Redis, migraciones aplicadas y `SMTP_HOST` vacío en
 `.env` (los flujos de verificación/reset leen el token del email a fichero vía
 `/auth/dev/email-tokens`). Para apuntar a otra URL o usar credenciales fijas:

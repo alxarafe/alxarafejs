@@ -75,28 +75,53 @@ done
 echo "[bruno] base url:  $BASE_URL (entorno: $ENV_NAME)"
 
 API_PID=""
+EMAILS_DIR=""
+TEST_PORT=""
 cleanup() {
   if [[ -n "$API_PID" ]]; then
     pkill -P "$API_PID" 2>/dev/null || true
     kill "$API_PID" 2>/dev/null || true
+  fi
+  if [[ -n "$TEST_PORT" ]]; then
+    fuser -k "${TEST_PORT}/tcp" 2>/dev/null || true
+  fi
+  if [[ -n "$EMAILS_DIR" && -d "$EMAILS_DIR" ]]; then
+    rm -rf "$EMAILS_DIR"
   fi
 }
 trap cleanup EXIT
 
 if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
   echo "[bruno] API ya disponible en $BASE_URL (no se arranca ninguna)."
-  echo "[bruno] ojo: usa límites de rate-limit amplios si quieres evitar 429"
-  echo "[bruno] (COMMON_RATE_LIMIT_MAX_REQUESTS alto); o libra el puerto y deja que"
-  echo "[bruno] este script arranque su propia API con límites amplios."
+  echo "[bruno] ojo: al reutilizar esa API no aplica el aislamiento (BD de test,"
+  echo "[bruno] redis y emails); la ejecución tocará los mismos recursos que esa API."
+  echo "[bruno] Para aislamiento total, libra el puerto y deja que este script"
+  echo "[bruno] arranque su propia API (usará TEST_DATABASE_URL y la quitará al terminar)."
+  echo "[bruno] rate-limit: usa límites amplios para evitar 429"
+  echo "[bruno] (COMMON_RATE_LIMIT_MAX_REQUESTS alto)."
 else
   echo "[bruno] API no disponible — arrancando en segundo plano..."
   HOST="$(python3 -c "import sys,urllib.parse; u=urllib.parse.urlparse(sys.argv[1]); print(u.hostname or 'localhost')" "$BASE_URL")"
   PORT="$(python3 -c "import sys,urllib.parse; u=urllib.parse.urlparse(sys.argv[1]); print(u.port or 80)" "$BASE_URL")"
+  TEST_PORT="$PORT"
   export HOST
   export PORT
   # Límites amplios para que las ráfagas de la colección no den 429.
   export COMMON_RATE_LIMIT_MAX_REQUESTS="${COMMON_RATE_LIMIT_MAX_REQUESTS:-5000}"
   export COMMON_RATE_LIMIT_WINDOW_MS="${COMMON_RATE_LIMIT_WINDOW_MS:-1000}"
+  # Aislamiento: BD de test dedicada (TEST_DATABASE_URL), Redis en índice
+  # propio y emails a un directorio temporal. Nada toca la BD de desarrollo.
+  BRUNO_DB_EXPORTS="$(BRUNO_RESET_DB="${BRUNO_RESET_DB:-0}" "$ROOT/scripts/bruno-db.sh")"
+  eval "$BRUNO_DB_EXPORTS"
+  export DATABASE_URL="$TEST_DATABASE_URL"
+  DEV_REDIS="$(set -a; . <(grep -E '^REDIS_URL=' "$ROOT/.env" 2>/dev/null || true); set +a; echo "${REDIS_URL:-redis://localhost:6379}")"
+  REDIS_DB="${BRUNO_REDIS_DB:-3}"
+  TEST_REDIS_URL="$(python3 -c "import sys,urllib.parse; u=urllib.parse.urlsplit(sys.argv[1]); print(urllib.parse.urlunsplit((u.scheme, u.netloc, '/'+sys.argv[2], u.query, u.fragment)))" "$DEV_REDIS" "$REDIS_DB")"
+  export REDIS_URL="$TEST_REDIS_URL"
+  export EMAILS_DIR="$(mktemp -d /tmp/alxarafe-bruno-mails.XXXXXX)"
+  echo "[bruno] BD de test: $TEST_DATABASE_URL"
+  echo "[bruno] Redis de test: $TEST_REDIS_URL (índice $REDIS_DB)"
+  echo "[bruno] emails de test: $EMAILS_DIR"
   pnpm start:dev >/tmp/alxarafe-bruno-api.log 2>&1 &
   API_PID=$!
   ok=0

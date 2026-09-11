@@ -7,7 +7,7 @@ import { StatusCodes } from "http-status-codes";
 
 type EmailPurpose = "verify" | "reset";
 
-const EMAILS_DIR = path.join(process.cwd(), "emails");
+const EMAILS_DIR = path.resolve(env.EMAILS_DIR || path.join(process.cwd(), "emails"));
 
 function decodeQuotedPrintable(input: string): string {
 	return input
