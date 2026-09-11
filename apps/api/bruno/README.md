@@ -53,10 +53,10 @@ van con sesión (logout, resend, forgot, reset) incluyen la cabecera
 | 32 | Resend verification | Reenvía el email de verificación al usuario con sesión y elimina tokens previos| 
 | 33 | Dev: capture verify token | Lee el token del email (dev) para `NEW_EMAIL` |
 | 34 | Verify email | Consume `verifyToken` |
-| 40 | Forgot password | Envía email de reset para `EMAIL` |
+| 40 | Forgot password | Envía email de reset para `NEW_EMAIL` |
 | 41 | Dev: capture reset token | Lee el token del email (dev) |
-| 42 | Reset password | Cambia la contraseña de `EMAIL` a `NEW_PASSWORD` con `resetToken` |
-| 49 | Login after reset | Verifica que el login funciona con la nueva contraseña |
+| 42 | Reset password | Cambia la contraseña de `NEW_EMAIL` a `RESET_PASSWORD` con `resetToken` |
+| 49 | Login after reset | Verifica el login de `NEW_EMAIL` con la nueva contraseña |
 | 50 | List users | Paginado, `$filter`, `$orderby` |
 | 51 | Get user | Detalle del usuario de la sesión |
 

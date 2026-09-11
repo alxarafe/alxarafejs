@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
-# Ejecuta una colección Bruno de alxarafejs sin la app de escritorio.
+# Ejecuta colecciones Bruno de alxarafejs sin la app de escritorio.
 #
 # Uso:
-#   ./scripts/bruno-api.sh [colección]       (por defecto núcleo: apps/api/bruno/alxarafe-api)
+#   ./scripts/bruno-api.sh [colección]
+#     - con argumento: ejecuta solo esa colección.
+#     - sin argumento: ejecuta TODAS las colecciones descubiertas:
+#         · núcleo: apps/api/bruno/* (carpetas con bruno.json/collection.bru)
+#         · módulos activos según config/modules.json (modules/<módulo>/bruno/*)
 #   BASE_URL=... EMAIL=... PASSWORD=... ./scripts/bruno-api.sh
 #
 # Requiere: PostgreSQL y Redis en marcha, migraciones aplicadas y las
 # credenciales EMAIL/PASSWORD del entorno local.bru correspondientes a un
 # usuario existente.
+#
+# Código de salida: 0 solo si TODAS las colecciones terminan OK; 1 si alguna
+# falla; 2 si no hay colecciones que ejecutar o la ruta no existe.
 
 set -euo pipefail
 
@@ -17,19 +24,54 @@ cd "$ROOT"
 BASE_URL="${BASE_URL:-http://localhost:8090}"
 HEALTH_URL="${BASE_URL}/health-check"
 ENV_NAME="${BRUNO_ENV:-local}"
-COLLECTION="${1:-}"
-if [[ -z "$COLLECTION" ]]; then
-  COLLECTION="$ROOT/apps/api/bruno/alxarafe-api"
-fi
-COLLECTION="$(cd "$(dirname "$COLLECTION")" && pwd)/$(basename "$COLLECTION")"
 
-if ! [[ -d "$COLLECTION" ]]; then
-  echo "error: no existe el directorio: $COLLECTION" >&2
+is_collection() { # dir con bruno.json o collection.bru
+  [[ -f "$1/bruno.json" || -f "$1/collection.bru" ]]
+}
+
+COLLECTIONS=()
+discover() { # base-dir: añade cada subcarpeta colección a COLLECTIONS
+  local base="$1" d
+  for d in "$base"/*/; do
+    if is_collection "$d"; then
+      COLLECTIONS+=("$(cd "$d" && pwd)")
+    fi
+  done
+}
+
+if (( $# > 0 )); then
+  COLLECTIONS=("$(cd "$(dirname "$1")" && pwd)/$(basename "$1")")
+else
+  discover "$ROOT/apps/api/bruno"
+  if [[ -r "$ROOT/config/modules.json" ]]; then
+    mods="$(python3 -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1])).get("enabled", [])))' "$ROOT/config/modules.json" 2>/dev/null || true)"
+    if [[ -n "$mods" ]]; then
+      while IFS= read -r name; do
+        [[ -n "$name" ]] || continue
+        discover "$ROOT/modules/$name/bruno"
+      done <<< "$mods"
+    fi
+  fi
+fi
+
+if (( ${#COLLECTIONS[@]} == 0 )); then
+  echo "error: no se encontró ninguna colección Bruno (bruno.json/collection.bru)" >&2
   echo "uso: $0 [ruta-a-coleccion]" >&2
   exit 2
 fi
 
-echo "[bruno] colección: $COLLECTION"
+for c in "${COLLECTIONS[@]}"; do
+  if ! is_collection "$c"; then
+    echo "error: no existe la colección: $c" >&2
+    echo "uso: $0 [ruta-a-coleccion]" >&2
+    exit 2
+  fi
+done
+
+echo "[bruno] colecciones: ${#COLLECTIONS[@]}"
+for c in "${COLLECTIONS[@]}"; do
+  echo "  - $c"
+done
 echo "[bruno] base url:  $BASE_URL (entorno: $ENV_NAME)"
 
 API_PID=""
@@ -77,12 +119,13 @@ fi
 
 # Credenciales: email fresco por ejecución (repetible, "sin pedir nada").
 # Sobrescribibles con EMAIL/NEW_EMAIL/... si quieres credenciales fijas.
-ENV_FILE="$COLLECTION/environments/$ENV_NAME.bru"
 TS="$(date +%s)"
 RUN_EMAIL="${EMAIL:-bruno-$TS@alxarafe.com}"
+ENV_FILE="${COLLECTIONS[0]}/environments/$ENV_NAME.bru"
 RUN_PASSWORD="${PASSWORD:-$(sed -n 's/^[[:space:]]*PASSWORD:[[:space:]]*\(..*\)$/\1/p' "$ENV_FILE" 2>/dev/null | head -n1)}"
 RUN_NEW_EMAIL="${NEW_EMAIL:-bruno-new-$TS@alxarafe.com}"
 RUN_NEW_PASSWORD="${NEW_PASSWORD:-$(sed -n 's/^[[:space:]]*NEW_PASSWORD:[[:space:]]*\(..*\)$/\1/p' "$ENV_FILE" 2>/dev/null | head -n1)}"
+RUN_RESET_PASSWORD="${RESET_PASSWORD:-$(sed -n 's/^[[:space:]]*RESET_PASSWORD:[[:space:]]*\(..*\)$/\1/p' "$ENV_FILE" 2>/dev/null | head -n1)}"
 RUN_NAME="${NAME:-Bruno User $TS}"
 
 bootstrap_user() {
@@ -104,33 +147,53 @@ fi
 # NOTA: NEW_EMAIL NO se pre-registra: la colección crea ese usuario vía
 # 'Register' durante la ejecución.
 
-# El CLI de Bruno requiere ejecutar desde la raíz de la colección (la que
-# contiene collection.bru + bruno.json).
-if [[ -f "$COLLECTION/collection.bru" ]]; then
-  BRU_CWD="$COLLECTION"
-  BRU_ARGS=(run --env "$ENV_NAME")
-else
-  # subcarpeta dentro de la colección: localizar la raíz y pasar la ruta relativa con -r
-  BRU_CWD="$COLLECTION"
-  if ! [[ -f "$BRU_CWD/collection.bru" ]]; then
-    BRU_CWD="$(dirname "$BRU_CWD")"
-    while [[ "$BRU_CWD" != "/" && ! -f "$BRU_CWD/collection.bru" ]]; do
-      BRU_CWD="$(dirname "$BRU_CWD")"
+run_collection() { # col: ejecuta una colección y devuelve su código de salida
+  local col="$1" bru_cwd rel
+  # El CLI de Bruno requiere ejecutar desde la raíz de la colección (la que
+  # contiene collection.bru + bruno.json).
+  if [[ -f "$col/collection.bru" ]]; then
+    bru_cwd="$col"
+  else
+    # subcarpeta dentro de la colección: localizar la raíz y pasar la ruta relativa con -r
+    bru_cwd="$col"
+    while [[ "$bru_cwd" != "/" && ! -f "$bru_cwd/collection.bru" ]]; do
+      bru_cwd="$(dirname "$bru_cwd")"
     done
+    if ! [[ -f "$bru_cwd/collection.bru" ]]; then
+      echo "error: no encuentro collection.bru ascendiendo desde $col" >&2
+      return 2
+    fi
   fi
-  if ! [[ -f "$BRU_CWD/collection.bru" ]]; then
-    echo "error: no encuentro collection.bru ascendiendo desde $COLLECTION" >&2
-    exit 2
+  local -a bru_args=(run --env "$ENV_NAME")
+  if [[ "$bru_cwd" != "$col" ]]; then
+    rel="$(realpath --relative-to="$bru_cwd" "$col")"
+    bru_args=(run -r --env "$ENV_NAME" "$rel")
   fi
-  REL_SUBFOLDER="$(realpath --relative-to="$BRU_CWD" "$COLLECTION")"
-  BRU_ARGS=(run -r --env "$ENV_NAME" "$REL_SUBFOLDER")
-fi
-BRU_ARGS+=(--env-var "BASE_URL=$BASE_URL"
-  --env-var "EMAIL=$RUN_EMAIL"
-  --env-var "PASSWORD=$RUN_PASSWORD"
-  --env-var "NEW_EMAIL=$RUN_NEW_EMAIL"
-  --env-var "NEW_PASSWORD=$RUN_NEW_PASSWORD"
-  --env-var "NAME=$RUN_NAME")
+  bru_args+=(--env-var "BASE_URL=$BASE_URL"
+    --env-var "EMAIL=$RUN_EMAIL"
+    --env-var "PASSWORD=$RUN_PASSWORD"
+    --env-var "NEW_EMAIL=$RUN_NEW_EMAIL"
+    --env-var "NEW_PASSWORD=$RUN_NEW_PASSWORD"
+    --env-var "RESET_PASSWORD=$RUN_RESET_PASSWORD"
+    --env-var "NAME=$RUN_NAME")
 
-echo "[bruno] ejecutando (en $BRU_CWD): ./node_modules/.bin/bru ${BRU_ARGS[*]}"
-(cd "$BRU_CWD" && "$ROOT/node_modules/.bin/bru" "${BRU_ARGS[@]}")
+  echo "[bruno] ==== colección: $col ===="
+  echo "[bruno] ejecutando (en $bru_cwd): ./node_modules/.bin/bru ${bru_args[*]}"
+  (cd "$bru_cwd" && "$ROOT/node_modules/.bin/bru" "${bru_args[@]}")
+}
+
+pass=0
+fail=0
+for c in "${COLLECTIONS[@]}"; do
+  if run_collection "$c"; then
+    pass=$((pass + 1))
+  else
+    fail=$((fail + 1))
+  fi
+done
+
+echo
+echo "[bruno] RESUMEN: ${pass} colección(es) OK, ${fail} con errores"
+if (( fail > 0 )); then
+  exit 1
+fi

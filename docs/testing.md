@@ -174,23 +174,39 @@ la URL (`/contacts/{{contactId}}/channels`).
 
 **Desde línea de comandos** (sin la app de Bruno; requiere `@usebruno/cli`):
 
+Es el encargado de lanzar la **batería completa** antes de subir cambios a
+git:
+
 ```bash
-pnpm test:bruno          # colección del núcleo (apps/api/bruno/alxarafe-api)
-pnpm test:bruno modules/contacts/bruno/alxarafe-contacts   # colección de un módulo
+pnpm test:bruno          # TODAS las colecciones: núcleo + módulos activos
+pnpm test:bruno modules/contacts/bruno/alxarafe-contacts   # solo una colección
 BASE_URL=http://localhost:8080 EMAIL=yo@mail.com PASSWORD=misecret pnpm test:bruno
 ```
 
 El script `scripts/bruno-api.sh`:
-1. Arranca **su propia API** (por defecto en `http://localhost:8090`, con
+1. Descubre las colecciones: `apps/api/bruno/*` (núcleo) y
+   `modules/<módulo>/bruno/*` para cada módulo activo en `config/modules.json`.
+   Con un argumento `[ruta]`, solo esa. Argumento o no, **todos** los
+   colecciones terminan OK → salida 0; si alguna falla, salida ≠ 0.
+2. Arranca **su propia API** (por defecto en `http://localhost:8090`, con
    `COMMON_RATE_LIMIT_MAX_REQUESTS=5000`) si no hay ninguna en esa URL,
    esperándola hasta 90 s. Si ya hay una respondiendo (p. ej. tu dev en
    `:8080`), la usa tal cual.
-2. Crea el usuario de login con email fresco (`bruno-<timestamp>@alxarafe.com`)
+3. Crea el usuario de login con email fresco (`bruno-<timestamp>@alxarafe.com`)
    si no existe, así cada ejecución es repetible.
-3. Ejecuta `bru run --env local` sobre la colección (cookie jar y capturas
-   de variables funcionan igual que en la GUI).
-4. Apaga la API al terminar si fue él quien la arrancó. El código de salida
-   es el de Bruno (≠ 0 si alguna petición falla).
+4. Ejecuta `bru run --env local` sobre cada colección (cookie jar y capturas
+   de variables funcionan igual que en la GUI), compartiendo `BASE_URL`,
+   `EMAIL`/`PASSWORD` (usuario de login con sesión) y `NEW_EMAIL`/
+   `NEW_PASSWORD`/`RESET_PASSWORD` (usuario de flujo de registro/reset).
+5. Apaga la API al terminar si fue él quien la arrancó. El código de salida
+   es 0 solo si todas las colecciones pasan.
+
+Contrato entre colecciones (importante): el usuario de login `EMAIL`/`PASSWORD`
+es **compartido por todas** las colecciones de una ejecución, así que ninguna
+debe mutar su contraseña. Los cambios de contraseña (reset, registro) se hacen
+siempre sobre el usuario dedicado `NEW_EMAIL` (`RESET_PASSWORD` al resetear).
+Por eso la colección del núcleo usa `NEW_EMAIL` en forgot/reset/relogin y el
+módulo solo hace login con `EMAIL`.
 
 Requisitos: PostgreSQL, Redis, migraciones aplicadas y `SMTP_HOST` vacío en
 `.env` (los flujos de verificación/reset leen el token del email a fichero vía
