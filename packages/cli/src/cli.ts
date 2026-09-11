@@ -12,9 +12,11 @@ Comandos de módulos:
   module validate [nombre]           Valida manifiestos y el grafo de dependencias
   module enable <nombre>             Activa un módulo (config/modules.json)
   module disable <nombre>            Desactiva un módulo
-  module add <nombre> --from <url|ruta> [--submodule] [--no-enable]
-                                     Instala un módulo, enlaza su fragment Prisma,
-                                     lo activa por defecto y lo compila
+  module add <nombre> --from <url|ruta> [--no-enable]
+                                     Instala un módulo localmente (clone/copia en
+                                     modules/, sin trackear en git), enlaza su
+                                     fragment Prisma, lo activa por defecto y lo
+                                     compila
   module remove <nombre> [--drop-schema]
                                      Desinstala un módulo y opcionalmente borra su
                                      esquema en la base de datos
@@ -33,7 +35,6 @@ function main(): void {
 		options: {
 			from: { type: "string" },
 			"no-enable": { type: "boolean", default: false },
-			submodule: { type: "boolean", default: false },
 			"drop-schema": { type: "boolean", default: false },
 			help: { type: "boolean", short: "h", default: false },
 		},
@@ -78,7 +79,7 @@ function main(): void {
 				break;
 			case "add":
 				requireName(action, name);
-				addModule(name, { from: values.from ?? "", submodule: values.submodule, enable: !values["no-enable"] });
+				addModule(name, { from: values.from ?? "", enable: !values["no-enable"] });
 				break;
 			case "remove":
 				requireName(action, name);

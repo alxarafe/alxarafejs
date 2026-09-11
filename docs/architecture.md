@@ -54,8 +54,9 @@ Todo el backend es **ESM** (`"type": "module"`). Dos perfiles distintos de `tsc`
 - **Validación** (fallo rápido en `strict`): nombres duplicados, dependencias que no
   existen (`MODULE_DEPENDENCY_NOT_FOUND`), ciclos (`MODULE_DEPENDENCY_CYCLE`) y módulos
   activos con dependencias desactivadas (`MODULE_DEPENDENCY_DISABLED`).
-- **Activación** (precedencia de mayor a menor): env → `config/modules.json` →
-  `enabledDefault` del manifest. Env: `ALXARAFE_MODULES_ENABLED` y
+- **Activación** (precedencia de mayor a menor): env → `config/modules.json`
+  (fichero local, gitignored) → `enabledDefault` del manifest. Env:
+  `ALXARAFE_MODULES_ENABLED` y
   `ALXARAFE_MODULES_DISABLED` (separados por coma). Los *packages* no se desactivan.
 - **Carga en `apps/api`**: `createApp()` consulta `getEnabledFeatureModules()` e importa
   cada módulo activo **por ruta del sistema de archivos** (`import(pathToFileURL(mod.directory/server.entry))`,
@@ -68,7 +69,8 @@ El grafo de dependencias se testea en `packages/core/src/modules/moduleManager.t
 
 La gestión operativa de módulos (instalar, activar, desactivar, desinstalar)
 vive en el paquete `@alxarafe/cli` (`pnpm alxarafe module ...`); los módulos se
-entregan como **git submodules** con su propio repo. Detalle: [modules.md](modules.md).
+entregan como **repos git propios clonados localmente** (nunca trackeados en el
+núcleo: `modules/` está en `.gitignore`). Detalle: [modules.md](modules.md).
 
 ## Flujo de una petición
 

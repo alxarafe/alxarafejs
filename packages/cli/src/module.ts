@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { ModuleManifest } from "@alxarafe/core";
 import { createModuleManager, readManifest } from "@alxarafe/core";
@@ -11,7 +11,6 @@ const MODELS_DIR = join("packages", "database", "prisma", "models");
 
 export interface AddModuleOptions {
 	from: string;
-	submodule: boolean;
 	enable: boolean;
 }
 
@@ -27,61 +26,19 @@ function isGitUrl(value: string): boolean {
 	return /^(?:https?|git|ssh):\/\//i.test(value) || /^git@[^:]+:.+\.git$/i.test(value);
 }
 
-function isSubmodule(root: string, name: string): boolean {
-	const gitmodules = join(root, ".gitmodules");
-	if (!existsSync(gitmodules)) return false;
-	return readFileSync(gitmodules, "utf8").includes(`path = modules/${name}`);
-}
-
 // ---------------------------------------------------------------------------
 // Materialization (add)
 // ---------------------------------------------------------------------------
 
-function stripSubmoduleEntry(content: string, name: string): string {
-	const match = `[submodule "modules/${name}"]`;
-	const lines = content.split("\n");
-	const out: string[] = [];
-	let skipping = false;
-	for (const line of lines) {
-		if (line.startsWith("[submodule ")) {
-			if (line === match) {
-				skipping = true;
-			} else {
-				skipping = false;
-			}
-		}
-		if (skipping) continue;
-		out.push(line);
-	}
-	return `${out
-		.join("\n")
-		.replace(/\n{2,}/g, "\n")
-		.trim()}\n`;
-}
-
-function removeSubmodule(root: string, name: string): void {
-	run(`git submodule deinit -f -- modules/${name}`);
-	const gitmodules = join(root, ".gitmodules");
-	if (existsSync(gitmodules)) {
-		writeFileSync(gitmodules, stripSubmoduleEntry(readFileSync(gitmodules, "utf8"), name));
-		// Restore the index entry so the repo is left as if the submodule
-		// never existed (the add command staged .gitmodules too).
-		run(`git add .gitmodules`);
-	}
-	run(`git rm --cached -f modules/${name}`);
-	rmSync(join(root, ".git", "modules", name), { recursive: true, force: true });
-	rmSync(join(root, MODULES_DIR, name), { recursive: true, force: true });
-}
-
-function materialize(root: string, name: string, from: string, asSubmodule: boolean): void {
+// Los módulos se materializan SIEMPRE como directorios locales no trackeados
+// (modules/ está en .gitignore del núcleo). Nunca se registran como submodules:
+// un `git submodule add` escribiría .gitmodules y anclaría el gitlink, dejando
+// rastro en el repositorio del núcleo.
+function materialize(root: string, name: string, from: string): void {
 	const target = join(root, MODULES_DIR, name);
 	if (existsSync(target)) fail(`La ruta '${target}' ya existe.`);
 	mkdirSync(join(root, MODULES_DIR), { recursive: true });
 
-	if (asSubmodule) {
-		run(`git submodule add ${from} modules/${name}`);
-		return;
-	}
 	if (existsSync(from)) {
 		cpSync(from, target, { recursive: true });
 		return;
@@ -93,12 +50,8 @@ function materialize(root: string, name: string, from: string, asSubmodule: bool
 	fail(`'${from}' no es ni una ruta local ni una URL git.`);
 }
 
-function cleanupMaterialized(root: string, name: string, asSubmodule: boolean): void {
-	if (asSubmodule) {
-		removeSubmodule(root, name);
-	} else {
-		rmSync(join(root, MODULES_DIR, name), { recursive: true, force: true });
-	}
+function cleanupMaterialized(root: string, name: string): void {
+	rmSync(join(root, MODULES_DIR, name), { recursive: true, force: true });
 }
 
 function ensurePrismaFragment(root: string, name: string, fragment: string): void {
@@ -203,17 +156,17 @@ export function addModule(name: string, opts: AddModuleOptions): void {
 	const existing = createModuleManager({ rootDir: root }).getUnit(name);
 	if (existing) fail(`Ya existe '${name}' en el workspace.`);
 
-	materialize(root, name, opts.from, opts.submodule);
+	materialize(root, name, opts.from);
 
 	let manifest: ModuleManifest;
 	try {
 		manifest = readManifest(join(root, MODULES_DIR, name));
 	} catch (err) {
-		cleanupMaterialized(root, name, opts.submodule);
+		cleanupMaterialized(root, name);
 		fail(`Manifiesto inválido tras materializar '${name}': ${err instanceof Error ? err.message : String(err)}`);
 	}
 	if (manifest.name !== name) {
-		cleanupMaterialized(root, name, opts.submodule);
+		cleanupMaterialized(root, name);
 		fail(`El manifest declara name='${manifest.name}' pero el módulo se llama '${name}'.`);
 	}
 
@@ -273,11 +226,7 @@ export function removeModule(name: string, opts: RemoveModuleOptions): void {
 	const target = join(root, MODULES_DIR, name);
 	if (!existsSync(target)) fail(`No existe '${target}'.`);
 
-	if (isSubmodule(root, name)) {
-		removeSubmodule(root, name);
-	} else {
-		rmSync(target, { recursive: true, force: true });
-	}
+	rmSync(target, { recursive: true, force: true });
 
 	const link = join(root, MODELS_DIR, `${name}.prisma`);
 	rmSync(link, { force: true }); // force: also removes a dangling symlink

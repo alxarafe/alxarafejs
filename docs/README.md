@@ -13,7 +13,7 @@ Documentación técnica completa del monorepo **alxarafejs**: backend modular co
 | [Seguridad](security.md) | Helmet, rate limiting, CORS, bcrypt, hashing de tokens, enumeración de usuarios |
 | [Email](email.md) | Transportes SMTP / fichero dev, plantillas enviadas |
 | [Cliente web](web.md) | Aplicación Angular 20, páginas, servicios, guards e interceptor |
-| [Módulos](modules.md) | **Implementado**: `modules/` como plugins, ciclo de vida (install/enable/disable/uninstall), manifest, composición de Prisma y gestión git (submodules) con el CLI `alxarafe module` |
+| [Módulos](modules.md) | **Implementado**: `modules/` como plugins, ciclo de vida (install/enable/disable/uninstall), manifest, composición de Prisma y gestión git (clonado local, nunca trackeado) con el CLI `alxarafe module` |
 | [Pruebas](testing.md) | Tests automatizados (Vitest/supertest) y colecciones Bruno para el núcleo y los módulos |
 | [Desarrollo](development.md) | Puesta en marcha, variables de entorno, scripts y buenas prácticas |
 
@@ -32,9 +32,9 @@ alxarafejs/
 │   ├── auth/       # Dominio de autenticación (registro, login, emails, reset)
 │   ├── email/      # Envío de correo (SMTP o transporte a fichero en dev)
 │   └── cli/        # CLI de gestión: `pnpm alxarafe module ...` (list/validate/enable/disable/add/remove)
-├── modules/        # Módulos de negocio opcionales (git submodules: modules/contacts)
+├── modules/        # Módulos de negocio opcionales (clonados localmente; nunca en git)
 └── config/
-    └── modules.json # Activación de módulos (enabled/disabled)
+    └── modules.json # Activación de módulos (enabled/disabled) — LOCAL, gitignored
 ```
 
 Dependencia de paquetes (acíclica):

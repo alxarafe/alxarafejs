@@ -20,6 +20,13 @@ packages/database/prisma/models/*
 packages/database/prisma/migrations/20260911130500_contacts/
 packages/database/prisma/migrations/*_drop_*_schema/
 
+# Feature modules: always materialized locally (clone/copy), never tracked.
+# They must not appear in the core repository at any time.
+modules/*
+
+# Module activation state — per-developer (created by `module add`/`enable`).
+config/modules.json
+
 # Development email files
 emails/*
 !emails/.gitkeep
