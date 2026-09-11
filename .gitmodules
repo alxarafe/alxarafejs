@@ -1,3 +1,0 @@
-[submodule "modules/contacts"]
-	path = modules/contacts
-	url = git@github.com:alxarafe/alxarafejs-contacts

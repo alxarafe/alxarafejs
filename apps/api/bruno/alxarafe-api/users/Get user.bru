@@ -1,0 +1,11 @@
+meta {
+  name: Get user
+  type: http
+  seq: 51
+}
+
+get {
+  url: http://{{BASE_URL}}/users/{{userId}}
+  body: none
+  auth: none
+}

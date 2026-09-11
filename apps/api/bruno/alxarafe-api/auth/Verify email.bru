@@ -1,0 +1,21 @@
+meta {
+  name: Verify email
+  type: http
+  seq: 32
+}
+
+post {
+  url: http://{{BASE_URL}}/auth/verify-email
+  body: json
+  auth: none
+
+  headers {
+    X-CSRF-Token: {{csrfToken}}
+  }
+}
+
+body:json {
+  {
+    "token": "{{verifyToken}}"
+  }
+}

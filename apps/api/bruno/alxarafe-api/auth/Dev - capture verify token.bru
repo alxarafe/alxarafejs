@@ -1,0 +1,17 @@
+meta {
+  name: Dev: capture verify token
+  type: http
+  seq: 31
+}
+
+get {
+  url: http://{{BASE_URL}}/auth/dev/email-tokens?email={{NEW_EMAIL}}&purpose=verify
+  body: none
+  auth: none
+}
+
+script:post-response {
+  if (res.body && res.body.responseObject) {
+    bru.setVar("verifyToken", res.body.responseObject.token);
+  }
+}

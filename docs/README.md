@@ -14,6 +14,7 @@ Documentación técnica completa del monorepo **alxarafejs**: backend modular co
 | [Email](email.md) | Transportes SMTP / fichero dev, plantillas enviadas |
 | [Cliente web](web.md) | Aplicación Angular 20, páginas, servicios, guards e interceptor |
 | [Módulos](modules.md) | **Implementado**: `modules/` como plugins, ciclo de vida (install/enable/disable/uninstall), manifest, composición de Prisma y gestión git (submodules) con el CLI `alxarafe module` |
+| [Pruebas](testing.md) | Tests automatizados (Vitest/supertest) y colecciones Bruno para el núcleo y los módulos |
 | [Desarrollo](development.md) | Puesta en marcha, variables de entorno, scripts y buenas prácticas |
 
 ## Mapa de paquetes

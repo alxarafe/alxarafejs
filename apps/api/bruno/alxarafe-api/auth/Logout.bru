@@ -1,0 +1,15 @@
+meta {
+  name: Logout
+  type: http
+  seq: 23
+}
+
+post {
+  url: http://{{BASE_URL}}/auth/logout
+  body: none
+  auth: none
+
+  headers {
+    X-CSRF-Token: {{csrfToken}}
+  }
+}
