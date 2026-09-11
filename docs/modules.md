@@ -211,19 +211,28 @@ en `prisma.config.ts` (carpeta, no fichero único — disponible desde Prisma 6.
 packages/database/prisma/
 ├── schema.prisma           # generator + datasource (plataforma)
 ├── migrations/
-│   ├── 20260910190000_init/
-│   └── 20260911130500_contacts/
-└── models/
+│   └── 20260910190000_init/   # SOLO migraciones de la plataforma
+└── models/                 # artefactos LOCALES de los módulos instalados (ignorados en git)
     └── contact.prisma      # symlink → ../../../../modules/contacts/prisma/contact.prisma
 ```
 
-| Acción | Qué ocurre |
+> **Un módulo NO deja rastro en el repositorio del núcleo.** El symlink de la
+> carpeta `models/` y las migraciones que el módulo aporta o genera son
+> artefactos **locales**, creados por `alxarafe module add/remove`, e
+> ignorados por `.gitignore` (`packages/database/prisma/models/*`,
+> migraciones de módulo y `*_drop_*_schema/`). Un módulo —que puede ser de
+> terceros— solo aporta código a su propio repo (el submodule)
+> (`modules/<nombre>/`); nunca escribe en `packages/` ni en el git del núcleo.
+> Las migraciones propias del módulo deben vivir en su repo (`prisma/migrations/`)
+> y el CLI se encarga de materializarlas en el monorepo al instalar.
+
+| Acción | Qué ocurre (todo LOCAL, ignora al git) |
 |---|---|
 | `module add` (con prisma) | Crea symlink `models/<nombre>.prisma` + `prisma generate` |
 | `module enable` | Solo modifica config/modules.json (el fragmento Prisma permanece) |
 | `module disable` | Solo modifica config/modules.json (el modelo Prisma permanece en el cliente) |
 | `module remove` | Borra symlink + `prisma generate` (el modelo desaparece del cliente) |
-| `module remove --drop-schema` | Lo anterior + genera migración que `DROP TABLE`s |
+| `module remove --drop-schema` | Lo anterior + genera migración `*_drop_<nombre>_schema` (ignorada en git) |
 
 > Pendiente: que `enable`/`disable` también togglen el symlink y ejecuten
 > `prisma generate` para que el cliente Prisma se adapte al 100%.
@@ -427,6 +436,10 @@ pnpm alxarafe module remove contacts --drop-schema
 6. **Los módulos se entregan como git submodule**, no como paquetes npm. Cada módulo tiene su propio repo.
 7. **Carga por ruta** (`import(pathToFileURL(...))`): el monorepo no declara dependencia npm de los módulos; el acoplamiento es por directorio `modules/`.
 8. **Precedencia de activación**: env → config/modules.json → enabledDefault.
+9. **Los módulos NO dejan rastro en el núcleo.** Solo se versiona su submodule
+   (`modules/<nombre>/`); fragmentos de Prisma y migraciones de módulos son
+   artefactos locales ignorados en git (`.gitignore`). Instalar ≠ querer
+   versionar.
 
 ---
 
@@ -434,6 +447,7 @@ pnpm alxarafe module remove contacts --drop-schema
 
 - **`modules.lock.json`:** registrar versión instalada, fuente (git commit), fecha. Actualmente solo existe `config/modules.json` (enabled/disabled).
 - **Enable/disable con toggling Prisma:** la desactivación completa sacaría el modelo del cliente Prisma (requiere symlink toggle + generate). Actualmente el modelo permanece siempre que el módulo esté instalado.
+- **Migraciones del módulo en su propio repo:** hoy el CLI solo hace `prisma generate` en `add`; falta que el módulo entregue su historia de migraciones (`prisma/migrations/`) y que `add` las materialice en el monorepo y ejecute `db:migrate`/`deploy`. Reproducible sin depender de lo que haya en tu disco.
 - **Merge de env del manifest:** variables de entorno del módulo que se fusionan en `.env` de forma no destructiva. No implementado.
 - **Web (Angular):** adaptación dinámica de rutas lazy y menús según módulos activos.
 - **CI del submodule:** test automático en el repo del módulo antes de publicar.

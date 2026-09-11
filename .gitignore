@@ -13,6 +13,13 @@ dist/
 # Generated Prisma client
 packages/database/src/generated/
 
+# Feature module artifacts — created LOCALLY by `alxarafe module add/remove`
+# (fragment symlink + migrations). Modules are optional and may be written by
+# third parties: they NEVER write into the core repo nor leave any trace in it.
+packages/database/prisma/models/*
+packages/database/prisma/migrations/20260911130500_contacts/
+packages/database/prisma/migrations/*_drop_*_schema/
+
 # Development email files
 emails/*
 !emails/.gitkeep
