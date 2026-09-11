@@ -83,13 +83,14 @@ en su propio repo (no deja rastro en el núcleo).
 
    ```
    mi-coleccion/
+   ├── bruno.json                # config de la colección (exigida por el CLI v4+)
    ├── collection.bru            # meta de la colección
    ├── environments/local.bru    # variables por entorno
    └── carpeta/                  # peticiones agrupadas
        └── Mi petición.bru
    ```
 
-2. `collection.bru`:
+2. `collection.bru` + `bruno.json`:
 
    ```
    meta {
@@ -98,6 +99,11 @@ en su propio repo (no deja rastro en el núcleo).
      seq: 1
    }
    ```
+   ```json
+   { "version": "1", "name": "mi-coleccion", "type": "collection", "ignore": ["node_modules", ".git"] }
+   ```
+
+   Sin `bruno.json`, `bru run` ni la app reconocen la carpeta como colección.
 
 3. `environments/local.bru`:
 
@@ -108,7 +114,9 @@ en su propio repo (no deja rastro en el núcleo).
    }
    ```
 
-4. Petición (formato v2; los verbos son bloques `get {}`, `post {}`, …):
+4. Petición (formato v2; los verbos son bloques `get {}`, `post {}`, `put {}`,
+   `delete {}`, y las cabeceras van a **nivel superior** en un bloque
+   `headers { ... }`, nunca dentro del verbo):
 
    ```
    meta {
@@ -117,14 +125,14 @@ en su propio repo (no deja rastro en el núcleo).
      seq: 20
    }
 
+   headers {
+     X-CSRF-Token: {{csrfToken}}
+   }
+
    post {
-     url: http://{{BASE_URL}}/auth/login
+     url: {{BASE_URL}}/auth/login
      body: json
      auth: none
-
-     headers {
-       X-CSRF-Token: {{csrfToken}}
-     }
    }
 
    body:json {
@@ -163,6 +171,33 @@ la URL (`/contacts/{{contactId}}/channels`).
   protegen sus rutas con CSRF: solo necesitan la cookie.
 
 ### Cómo ejecutarlas
+
+**Desde línea de comandos** (sin la app de Bruno; requiere `@usebruno/cli`):
+
+```bash
+pnpm test:bruno          # colección del núcleo (apps/api/bruno/alxarafe-api)
+pnpm test:bruno modules/contacts/bruno/alxarafe-contacts   # colección de un módulo
+BASE_URL=http://localhost:8080 EMAIL=yo@mail.com PASSWORD=misecret pnpm test:bruno
+```
+
+El script `scripts/bruno-api.sh`:
+1. Arranca **su propia API** (por defecto en `http://localhost:8090`, con
+   `COMMON_RATE_LIMIT_MAX_REQUESTS=5000`) si no hay ninguna en esa URL,
+   esperándola hasta 90 s. Si ya hay una respondiendo (p. ej. tu dev en
+   `:8080`), la usa tal cual.
+2. Crea el usuario de login con email fresco (`bruno-<timestamp>@alxarafe.com`)
+   si no existe, así cada ejecución es repetible.
+3. Ejecuta `bru run --env local` sobre la colección (cookie jar y capturas
+   de variables funcionan igual que en la GUI).
+4. Apaga la API al terminar si fue él quien la arrancó. El código de salida
+   es el de Bruno (≠ 0 si alguna petición falla).
+
+Requisitos: PostgreSQL, Redis, migraciones aplicadas y `SMTP_HOST` vacío en
+`.env` (los flujos de verificación/reset leen el token del email a fichero vía
+`/auth/dev/email-tokens`). Para apuntar a otra URL o usar credenciales fijas:
+`BASE_URL=... EMAIL=... PASSWORD=... pnpm test:bruno`.
+
+**Desde la app de Bruno:**
 
 1. Arranca la API: `pnpm start:dev` (BD + `.env` en marcha).
 2. En Bruno: **Abrir carpeta** → selecciona la carpeta de la colección.

@@ -1,11 +1,11 @@
 meta {
   name: Dev: capture verify token
   type: http
-  seq: 31
+  seq: 33
 }
 
 get {
-  url: http://{{BASE_URL}}/auth/dev/email-tokens?email={{NEW_EMAIL}}&purpose=verify
+  url: {{BASE_URL}}/auth/dev/email-tokens?email={{NEW_EMAIL}}&purpose=verify
   body: none
   auth: none
 }

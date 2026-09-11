@@ -4,12 +4,12 @@ meta {
   seq: 23
 }
 
+headers {
+  X-CSRF-Token: {{csrfToken}}
+}
+
 post {
-  url: http://{{BASE_URL}}/auth/logout
+  url: {{BASE_URL}}/auth/logout
   body: none
   auth: none
-
-  headers {
-    X-CSRF-Token: {{csrfToken}}
-  }
 }

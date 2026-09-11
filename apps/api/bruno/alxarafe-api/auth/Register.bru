@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: http://{{BASE_URL}}/auth/register
+  url: {{BASE_URL}}/auth/register
   body: json
   auth: none
 }
@@ -15,5 +15,14 @@ body:json {
     "name": "{{NAME}}",
     "email": "{{NEW_EMAIL}}",
     "password": "{{NEW_PASSWORD}}"
+  }
+}
+
+script:post-response {
+  if (res.body && res.body.responseObject) {
+    bru.setVar("csrfToken", res.body.responseObject.csrfToken);
+    if (res.body.responseObject.user) {
+      bru.setVar("userId", res.body.responseObject.user.id);
+    }
   }
 }

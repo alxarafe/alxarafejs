@@ -21,6 +21,17 @@ núcleo (`apps/api/bruno`) porque describe la API del núcleo.
 4. Ejecuta **Login** primero: las peticiones siguientes ya llevan la sesión
    y las variables `csrfToken` y `userId` se capturan automáticamente.
 
+## Ejecución sin la app de Bruno
+
+```bash
+pnpm test:bruno          # arranca su propia API (puerto 8090) y ejecuta la colección
+```
+
+El script `scripts/bruno-api.sh` (detalles en `docs/testing.md`) levanta su
+propia API con límites de rate-limit amplios si `BASE_URL` no responde, crea
+el usuario de login con email fresco y lanza `bru run --env local`. Para
+usar tu servidor dev: `BASE_URL=http://localhost:8080 pnpm test:bruno`.
+
 ## CSRF
 
 `/auth/*` protege las peticiones de escritura con doble envío CSRF
@@ -38,13 +49,14 @@ van con sesión (logout, resend, forgot, reset) incluyen la cabecera
 | 21 | CSRF token | Alternativa para refrescar el token |
 | 22 | Me | Usuario autenticado |
 | 23 | Logout | Destruye la sesión |
-| 30 | Register | Crea cuenta con `NEW_EMAIL` (sin verificar) |
-| 31 | Dev: capture verify token | Lee el token del email (dev) para `NEW_EMAIL` |
-| 32 | Verify email | Consume `verifyToken` |
-| 33 | Resend verification | Reenvía el email y se vuelve a capturar el token (31) |
+| 30 | Register | Crea `NEW_EMAIL` y establece sesión; captura el `csrfToken` nuevo |
+| 32 | Resend verification | Reenvía el email de verificación al usuario con sesión y elimina tokens previos| 
+| 33 | Dev: capture verify token | Lee el token del email (dev) para `NEW_EMAIL` |
+| 34 | Verify email | Consume `verifyToken` |
 | 40 | Forgot password | Envía email de reset para `EMAIL` |
 | 41 | Dev: capture reset token | Lee el token del email (dev) |
-| 42 | Reset password | Cambia la contraseña con `resetToken` y `NEW_PASSWORD` |
+| 42 | Reset password | Cambia la contraseña de `EMAIL` a `NEW_PASSWORD` con `resetToken` |
+| 49 | Login after reset | Verifica que el login funciona con la nueva contraseña |
 | 50 | List users | Paginado, `$filter`, `$orderby` |
 | 51 | Get user | Detalle del usuario de la sesión |
 

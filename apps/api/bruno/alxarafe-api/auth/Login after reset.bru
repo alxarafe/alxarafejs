@@ -1,7 +1,11 @@
 meta {
-  name: Login
+  name: Login after reset
   type: http
-  seq: 20
+  seq: 49
+}
+
+headers {
+  X-CSRF-Token: {{csrfToken}}
 }
 
 post {
@@ -13,7 +17,7 @@ post {
 body:json {
   {
     "email": "{{EMAIL}}",
-    "password": "{{PASSWORD}}"
+    "password": "{{NEW_PASSWORD}}"
   }
 }
 

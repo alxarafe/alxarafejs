@@ -1,15 +1,15 @@
 meta {
   name: Resend verification
   type: http
-  seq: 33
+  seq: 32
+}
+
+headers {
+  X-CSRF-Token: {{csrfToken}}
 }
 
 post {
-  url: http://{{BASE_URL}}/auth/resend-verification
+  url: {{BASE_URL}}/auth/resend-verification
   body: none
   auth: none
-
-  headers {
-    X-CSRF-Token: {{csrfToken}}
-  }
 }
