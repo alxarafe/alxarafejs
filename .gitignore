@@ -30,11 +30,3 @@ coverage/
 .vscode/
 .idea/
 .DS_Store
-
-# Feature modules (kept out of the monorepo git; delivered as submodules/registries)
-/modules/
-
-# Prisma artifacts of disabled/absent modules: the models symlink (dangling without
-# the module) and its migration. Restore once a module ships a fragment/migration.
-packages/database/prisma/models/*
-packages/database/prisma/migrations/20260911130500_contacts/
