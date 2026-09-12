@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ApiError, PaginationMeta } from '../../core/models/api';
@@ -9,6 +9,7 @@ import { UsersService } from '../../core/services/users.service';
 @Component({
   selector: 'app-users',
   templateUrl: './users.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './users.scss',
 })
 export class UsersPage implements OnInit {
