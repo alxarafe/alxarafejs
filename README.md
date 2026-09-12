@@ -1,5 +1,10 @@
 # Alxarafe JS — Monorepo
 
+![Node.js](https://img.shields.io/badge/Node.js-24-green?style=flat-square)
+![CI](https://github.com/alxarafe/alxarafejs/actions/workflows/ci.yml/badge.svg)
+![Static Analysis](https://img.shields.io/badge/static%20analysis-TypeScript%20%2B%20Biome-blue?style=flat-square)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/alxarafe/alxarafejs/issues)
+
 Backend modular con Express 5 y TypeScript + cliente Angular. Documentación completa en [`docs/`](docs/README.md).
 
 ## Estructura
@@ -7,7 +12,7 @@ Backend modular con Express 5 y TypeScript + cliente Angular. Documentación com
 ```
 ├── apps/
 │   ├── api/            # Aplicación: monta middleware + routers + swagger + bootstrap
-│   └── web/            # Cliente web (Angular 20)
+│   └── web/            # Cliente web (Angular 22)
 ├── packages/
 │   ├── core/           # Infraestructura compartida (env, logger, HTTP, tokens, validación, paginación)
 │   ├── database/       # Esquema Prisma y cliente de base de datos (PostgreSQL)
@@ -34,7 +39,7 @@ Cada paquete se publica de forma independiente (`@alxarafe/core`, `@alxarafe/aut
 
 ## Requisitos
 
-- Node.js ≥ 23 (ver `.tool-versions`)
+- Node.js ≥ 24 (ver `.tool-versions`)
 - PostgreSQL y Redis en ejecución (ver `.env.example`)
 
 ## Puesta en marcha

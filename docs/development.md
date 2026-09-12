@@ -2,7 +2,7 @@
 
 ## Requisitos
 
-- **Node.js ≥ 23** (ver `.tool-versions`).
+- **Node.js ≥ 24** (ver `.tool-versions`).
 - **pnpm** `12.4.1` (`packageManager`).
 - **PostgreSQL** en `localhost:5433` y **Redis** en `localhost:6379` (por defecto en `.env`).
 
