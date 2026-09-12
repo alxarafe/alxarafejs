@@ -11,7 +11,7 @@ import {
 	rateLimiter,
 	requestLogger,
 } from "@alxarafe/core";
-import { sessionMiddleware } from "@alxarafe/session";
+import { csrfProtection, sessionMiddleware } from "@alxarafe/session";
 import { userRegistry, userRouter } from "@alxarafe/users";
 import type { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import cors from "cors";
@@ -55,6 +55,11 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Express
 
 	// Session (Redis-backed)
 	app.use(sessionMiddleware);
+
+	// CSRF double-submit, app-wide: every state-changing request on an
+	// authenticated session must include X-CSRF-Token (login/register are
+	// exempt because no session exists yet).
+	app.use(csrfProtection);
 
 	// Infra routes (packages, always mounted)
 	app.use("/health-check", healthCheckRouter);

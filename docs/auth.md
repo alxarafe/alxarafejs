@@ -10,7 +10,7 @@
 
 - Cada sesión tiene un `csrfToken` aleatorio almacenado en la sesión de Redis.
 - El cliente lo recibe al hacer **login/register** (en `responseObject.csrfToken`) o vía `GET /auth/csrf`.
-- En toda mutación con sesión autenticada el cliente debe enviar el token en la cabecera **`X-CSRF-Token`**. La sesión de Redis es la fuente de verdad: el token enviado se compara contra el almacenado (no se valida contra una cookie, por eso es "double-submit" con cabecera).
+- En toda mutación con sesión autenticada el cliente debe enviar el token en la cabecera **`X-CSRF-Token`** — se valida a nivel de aplicación, así que también cubre los routers de los módulos (no solo `/auth`). La sesión de Redis es la fuente de verdad: el token enviado se compara contra el almacenado (no se valida contra una cookie, por eso es "double-submit" con cabecera).
 - Si falta o no coincide: `403`.
 - El registro y el login no exigen CSRF (aún no hay sesión). Una vez autenticado, **cada mutación requiere el token vigente**; si el servidor rota el token, el cliente debe refrescarlo.
 

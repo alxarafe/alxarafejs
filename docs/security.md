@@ -20,6 +20,8 @@
 ## CSRF
 
 - Patrón *double-submit* con cabecera `X-CSRF-Token` comparada contra el token guardado en la sesión Redis. Detalle en [auth.md](auth.md).
+- Se aplica **a nivel de aplicación** (después de la sesión, antes de cualquier router): toda mutación (`POST`/`PUT`/`PATCH`/`DELETE`) con sesión autenticada exige el token, **incluidos los módulos montados en `apps/api`** (ya no solo `/auth`). Login/register quedan exentos (aún no hay sesión).
+- La cookie de sesión es `HttpOnly` + `SameSite=Lax`, lo que limita los vectores de un ataque cross-site.
 
 ## Contraseñas y tokens
 

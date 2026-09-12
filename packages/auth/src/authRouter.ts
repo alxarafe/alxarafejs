@@ -1,5 +1,4 @@
 import { createApiResponse, validateRequest } from "@alxarafe/core";
-import { csrfProtection } from "@alxarafe/session";
 import { requireAuth, UserSchema } from "@alxarafe/users";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
@@ -91,7 +90,7 @@ authRegistry.registerPath({
 	responses: createApiResponse(z.null(), "Password reset"),
 });
 
-authRouter.use(csrfProtection);
+// CSRF is enforced app-wide in apps/api (security:csrfProtection), not here.
 
 authRouter.post("/register", validateRequest(RegisterSchema), authController.register);
 authRouter.post("/login", validateRequest(LoginSchema), authController.login);
