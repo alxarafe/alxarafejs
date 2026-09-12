@@ -17,6 +17,7 @@ export class CrudListComponent {
   @Input() error: string | null = null;
 
   @Output() create = new EventEmitter<void>();
+  @Output() detail = new EventEmitter<Record<string, unknown>>();
   @Output() edit = new EventEmitter<Record<string, unknown>>();
   @Output() delete = new EventEmitter<Record<string, unknown>>();
   @Output() paged = new EventEmitter<number>();

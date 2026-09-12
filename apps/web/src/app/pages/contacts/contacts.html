@@ -1,10 +1,113 @@
 @if (showForm()) {
-  <app-crud-form
-    [config]="config"
-    [model]="editing()"
-    (saved)="onSaved($event)"
-    (cancel)="onCancel()"
-  />
+  <app-crud-form [config]="config" [model]="editing()" (saved)="onSaved($event)" (cancel)="onCancel()" />
+} @else if (showDetail()) {
+  @if (detail(); as d) {
+    <section class="detail">
+      <header class="detail-header">
+        <div>
+          <button type="button" class="outline" (click)="closeDetail()">← Volver</button>
+          <h2>{{ d.name }}</h2>
+        </div>
+        <div class="detail-actions">
+          <button type="button" class="outline" (click)="editContact(d)">Editar</button>
+          <button type="button" class="outline danger" (click)="deleteContact(d)">Eliminar</button>
+        </div>
+      </header>
+
+      @if (detailLoading()) {
+        <p class="muted">Cargando…</p>
+      }
+      @if (error(); as message) {
+        <p class="error" role="alert">{{ message }}</p>
+      }
+
+      <section class="card">
+        <header class="card-header">
+          <h3>Direcciones</h3>
+          <button type="button" class="outline" (click)="addAddressForm.set(!addAddressForm())">
+            {{ addAddressForm() ? 'Cancelar' : 'Añadir dirección' }}
+          </button>
+        </header>
+
+        @if (addAddressForm()) {
+          <app-crud-form [config]="addressConfig" (saved)="saveAddress($event)" (cancel)="addAddressForm.set(false)" />
+        }
+
+        @if (d.addresses.length === 0) {
+          <p class="muted">Sin direcciones</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th>Etiqueta</th>
+                <th>Calle</th>
+                <th>Ciudad</th>
+                <th>Provincia / Estado</th>
+                <th>CP</th>
+                <th>País</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (address of d.addresses; track address.id) {
+                <tr>
+                  <td>{{ address.label }}</td>
+                  <td>{{ address.street }}</td>
+                  <td>{{ address.city }}</td>
+                  <td>{{ address.state }}</td>
+                  <td>{{ address.postalCode }}</td>
+                  <td>{{ address.country }}</td>
+                  <td class="actions">
+                    <button type="button" class="outline danger" (click)="removeAddress(address.id)">Eliminar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <h3>Medios de comunicación</h3>
+          <button type="button" class="outline" (click)="addChannelForm.set(!addChannelForm())">
+            {{ addChannelForm() ? 'Cancelar' : 'Añadir medio' }}
+          </button>
+        </header>
+
+        @if (addChannelForm()) {
+          <app-crud-form [config]="channelConfig" (saved)="saveChannel($event)" (cancel)="addChannelForm.set(false)" />
+        }
+
+        @if (d.channels.length === 0) {
+          <p class="muted">Sin medios de comunicación</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Etiqueta</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (channel of d.channels; track channel.id) {
+                <tr>
+                  <td>{{ channel.channelTypeName }}</td>
+                  <td>{{ channel.value }}</td>
+                  <td>{{ channel.label }}</td>
+                  <td class="actions">
+                    <button type="button" class="outline danger" (click)="removeChannel(channel.id)">Eliminar</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    </section>
+  }
 } @else {
   <app-crud-list
     [config]="config"
@@ -13,6 +116,7 @@
     [loading]="loading()"
     [error]="error()"
     (create)="newContact()"
+    (detail)="viewContact($event)"
     (edit)="editContact($event)"
     (delete)="deleteContact($event)"
     (paged)="loadPage($event)"

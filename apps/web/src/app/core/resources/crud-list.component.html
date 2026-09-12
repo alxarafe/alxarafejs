@@ -28,6 +28,9 @@
             <td>{{ cellValue(row, field) }}</td>
           }
           <td class="actions">
+            @if (config.showDetail) {
+              <button type="button" class="outline" (click)="detail.emit(row)">Ver</button>
+            }
             <button type="button" class="outline" (click)="edit.emit(row)">Editar</button>
             <button type="button" class="outline danger" (click)="delete.emit(row)">Eliminar</button>
           </td>

@@ -24,6 +24,8 @@ export interface ResourceConfig {
   listFields: FieldConfig[];
   /** Controls rendered in the generic form. */
   formFields: FieldConfig[];
+  /** Renders a "Ver" row action that opens a detail view (implemented by the page). */
+  showDetail?: boolean;
 }
 
 export interface ListParams {
