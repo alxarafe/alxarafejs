@@ -2,6 +2,14 @@
   <header class="topnav">
     <a routerLink="/users">Usuarios</a>
     <a routerLink="/contacts">Contactos</a>
+    <label class="theme-toggle">
+      <span class="muted">Tema</span>
+      <select [value]="themeService.current()" (change)="setTheme($event)">
+        @for (theme of themeService.Themes; track theme.value) {
+          <option [attr.value]="theme.value">{{ theme.label }}</option>
+        }
+      </select>
+    </label>
   </header>
   <router-outlet />
 </main>

@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { ThemeService } from '../services/theme.service';
 import { buildFormGroup } from './resource-form';
 import { ResourceConfig } from './resource.types';
 
@@ -13,6 +14,8 @@ import { ResourceConfig } from './resource.types';
 export class CrudFormComponent implements OnChanges {
   @Input({ required: true }) config!: ResourceConfig;
   @Input() model: Record<string, unknown> | null = null;
+
+  readonly themes = inject(ThemeService);
 
   @Output() saved = new EventEmitter<Record<string, unknown>>();
   @Output() cancel = new EventEmitter<void>();

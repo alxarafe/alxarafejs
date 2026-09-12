@@ -18,7 +18,14 @@
           </select>
         }
         @case ('boolean') {
-          <input type="checkbox" [formControlName]="field.name" />
+          @if (themes.current() === 'alternative') {
+            <select [formControlName]="field.name">
+              <option [ngValue]="true">Sí</option>
+              <option [ngValue]="false">No</option>
+            </select>
+          } @else {
+            <input type="checkbox" [formControlName]="field.name" />
+          }
         }
         @case ('number') {
           <input type="number" [formControlName]="field.name" />

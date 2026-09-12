@@ -27,15 +27,15 @@
 }
 
 button.danger {
-  color: #b91c1c;
+  color: var(--color-danger);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border: 1px solid #e2e6ea;
-  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -43,15 +43,15 @@ th,
 td {
   text-align: left;
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid #eef0f3;
+  border-bottom: 1px solid var(--color-divider);
 }
 
 th {
-  background: #f8fafc;
+  background: var(--color-th-bg);
   font-size: 0.8125rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #5b6572;
+  color: var(--color-muted);
 }
 
 tbody tr:last-child td {

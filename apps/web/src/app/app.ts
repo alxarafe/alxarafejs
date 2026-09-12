@@ -1,5 +1,7 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
+
+import { AppTheme, ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -8,4 +10,11 @@ import { RouterLink, RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.scss',
 })
-export class App {}
+export class App {
+  readonly themeService = inject(ThemeService);
+
+  setTheme(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.themeService.setTheme(target.value as AppTheme);
+  }
+}
