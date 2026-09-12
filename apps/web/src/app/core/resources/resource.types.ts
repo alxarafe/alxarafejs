@@ -15,7 +15,7 @@ export interface FieldConfig {
 }
 
 export interface ResourceConfig {
-  /** Base API path, e.g. '/api/contacts'. */
+  /** Base API path, e.g. '/api/users'. */
   path: string;
   title: string;
   /** Primary key field, defaults to 'id'. */

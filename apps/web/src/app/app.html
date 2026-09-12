@@ -1,7 +1,6 @@
 <main class="shell">
   <header class="topnav">
     <a routerLink="/users">Usuarios</a>
-    <a routerLink="/contacts">Contactos</a>
     <label class="theme-toggle">
       <span class="muted">Tema</span>
       <select [value]="themeService.current()" (change)="setTheme($event)">

@@ -10,11 +10,12 @@ export const guestGuard: CanActivateFn = () => {
 
   return auth.me().pipe(
     map((res) => {
-      const isAuthenticated = res.success && !!res.responseObject;
-      if (isAuthenticated) {
+      const user = res.success && res.responseObject ? res.responseObject : null;
+      if (user?.role === 'ADMIN') {
         router.navigate(['/users']);
+        return false;
       }
-      return !isAuthenticated;
+      return true;
     }),
     catchError(() => of(true)),
   );

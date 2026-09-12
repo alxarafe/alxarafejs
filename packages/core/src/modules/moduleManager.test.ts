@@ -40,17 +40,17 @@ describe("ModuleManager", () => {
 			scaffold(tmp, {
 				"packages/core": { name: "core", version: "1.0.0", dependsOn: [] },
 				"packages/database": { name: "database", version: "1.0.0", dependsOn: ["core"] },
-				"modules/contacts": {
-					name: "contacts",
+				"modules/billing": {
+					name: "billing",
 					version: "1.0.0",
 					dependsOn: ["core"],
-					server: { mountPath: "/contacts" },
+					server: { mountPath: "/billing" },
 				},
 			});
 			const m = new ModuleManager({ rootDir: tmp, strict: true });
 			expect(m.all).toHaveLength(3);
 			expect(m.packages.map((u) => u.name)).toEqual(["core", "database"]);
-			expect(m.modules.map((u) => u.name)).toEqual(["contacts"]);
+			expect(m.modules.map((u) => u.name)).toEqual(["billing"]);
 		});
 
 		it("ignores directories without module.json", () => {

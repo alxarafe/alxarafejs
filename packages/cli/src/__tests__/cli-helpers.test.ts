@@ -4,7 +4,7 @@ import { assertValidModuleName, isGitUrl, isValidModuleName } from "../helpers.j
 
 describe("isValidModuleName", () => {
 	it("acepta nombres de módulo válidos", () => {
-		for (const name of ["contacts", "my-module2", "a", "a_b"]) {
+		for (const name of ["alpha", "my-module2", "a", "a_b"]) {
 			expect(isValidModuleName(name)).toBe(true);
 		}
 	});
@@ -12,7 +12,7 @@ describe("isValidModuleName", () => {
 	it("rechaza nombres que escapan de modules/ o inyectan shell", () => {
 		for (const name of [
 			"",
-			"Contacts",
+			"Alpha",
 			"-x",
 			"..",
 			".",
@@ -37,10 +37,10 @@ describe("isValidModuleName", () => {
 describe("isGitUrl", () => {
 	it("acepta orígenes permitidos", () => {
 		for (const url of [
-			"https://github.com/alxarafe/alxarafejs-contacts.git",
+			"https://github.com/alxarafe/some-module.git",
 			"git://host/repo.git",
 			"ssh://git@host/repo",
-			"git@github.com:alxarafe/alxarafejs-contacts.git",
+			"git@github.com:alxarafe/some-module.git",
 		]) {
 			expect(isGitUrl(url)).toBe(true);
 		}

@@ -17,7 +17,6 @@ packages/database/src/generated/
 # (fragment symlink + migrations). Modules are optional and may be written by
 # third parties: they NEVER write into the core repo nor leave any trace in it.
 packages/database/prisma/models/*
-packages/database/prisma/migrations/20260911130500_contacts/
 packages/database/prisma/migrations/*_drop_*_schema/
 
 # Feature modules: always materialized locally (clone/copy), never tracked.
