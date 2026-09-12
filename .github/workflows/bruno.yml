@@ -1,0 +1,60 @@
+name: Bruno API tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bruno:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: alxarafejs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+          cache: pnpm
+
+      - name: Instalar (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (start:dev resuelve @alxarafe/* a dist/)
+        run: pnpm build
+
+      - name: Preparar .env para Postgres y Redis de test
+        run: |
+          cat > .env <<'EOF'
+          DATABASE_URL="postgresql://postgres:postgres@localhost:5432/alxarafejs?schema=public"
+          REDIS_URL="redis://localhost:6379"
+          EOF
+
+      - name: Ejecutar colecciones Bruno (BD/Redis/emails de test aislados)
+        run: pnpm test:bruno

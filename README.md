@@ -2,6 +2,7 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-24-green?style=flat-square)
 ![CI](https://github.com/alxarafe/alxarafejs/actions/workflows/ci.yml/badge.svg)
+![Bruno API tests](https://github.com/alxarafe/alxarafejs/actions/workflows/bruno.yml/badge.svg)
 ![Static Analysis](https://img.shields.io/badge/static%20analysis-TypeScript%20%2B%20Biome-blue?style=flat-square)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/alxarafe/alxarafejs/issues)
 
