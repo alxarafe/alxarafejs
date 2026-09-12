@@ -229,8 +229,10 @@ packages/database/prisma/
 > migraciones de módulo y `*_drop_*_schema/`). Un módulo —que puede ser de
 > terceros— solo aporta código a su propio repo (`modules/<nombre>/`); nunca
 > escribe en `packages/` ni en el git del núcleo.
-> Las migraciones propias del módulo deben vivir en su repo (`prisma/migrations/`)
-> y el CLI se encarga de materializarlas en el monorepo al instalar.
+> La fusión de migraciones y schema para despliegue se formaliza en
+> [`docs/migrations.md`](migrations.md) (caché de módulos); el symlink que aquí
+> se describe es el mecanismo local actual, a sustituir por la caché cuando se
+> integre en la CLI.
 
 | Acción | Qué ocurre (todo LOCAL, ignora al git) |
 |---|---|

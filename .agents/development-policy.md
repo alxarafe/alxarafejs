@@ -2,7 +2,8 @@
 
 Reglas adicionales del proyecto (complementa `AGENTS.md`). Cada decisión declara **qué**
 se decidió, **por qué** y **cómo se verifica**. Solo es política lo que está decidido;
-lo pendiente se lista al final y no se implementa sin decidirlo antes.
+las decisiones de arquitectura pendientes se registran en `docs/deuda-tecnica.md` y
+no se implementan sin decidirlas antes.
 
 Cuando se cite un módulo como ejemplo, se nombra por su **repositorio publicado**
 (p. ej. `git@github.com:alxarafe/alxarafejs-contacts.git`), nunca por una ruta local:
@@ -107,12 +108,27 @@ una instalación limpia del núcleo no trae módulos.
   construir antes: vitest resuelve los paquetes workspace (`@alxarafe/*`) a su
   fuente (`packages/*/src/index.ts`) vía `resolve.alias` en `vite.config.mts`.
 
-## 8. Decisiones pendientes (no implementar sin decidir antes)
+## 8. Módulos: artefactos solo en `modules/` y en la caché
 
-- Autorización y ownership de datos (SaaS multiusuario frente a directorio
-  compartido de confianza).
-- Política de migraciones de módulos (quién las posee y cómo se ordenan).
-- Hosting del frontend y URL pública independiente del bind del backend.
-- Derivar el descriptor de campos del frontend desde el contrato
-  OpenAPI/Zod del servidor, para no duplicar metadatos (hoy el descriptor
-  replica `contactModel.ts`).
+- **Decisión.** Un módulo solo aporta código a su repositorio
+  (`modules/<nombre>/`): fragmento Prisma, historia propia de migraciones
+  (`database/prisma/migrations/`, mirror `prisma/migrations/`) y frontend. El
+  núcleo no trackea ningún artefacto de módulo. Las piezas que Prisma necesita
+  se ensamblan en una caché local fuera de git (`.alxarafe-cache/`), regenerada
+  por completo por `module sync` al añadir, activar, desactivar o actualizar un
+  módulo: núcleo con prefijo `00-`, módulos `01-`, `02-`, … en orden de
+  `dependsOn`.
+- **Por qué.** Hay una BD y un esquema; Prisma no admite historias de migración
+  múltiples. La caché es un artefacto derivado, reproducible y sin estado
+  residual. Mecánica completa y pruebas en `docs/migrations.md`.
+- **Verificación.** El despliegue usa `module sync` + `prisma migrate deploy`
+  sobre la caché. Un `git grep -iE '<nombre-de-módulo>'` sobre archivos
+  trackeados fuera de `docs/` y `.agents/` no devuelve código ni lockfile.
+
+## 9. Decisiones de arquitectura pendientes
+
+No implementar ninguna sin acordarla antes con el usuario. La lista viva y su
+razonamiento viven en `docs/deuda-tecnica.md` (sección "Decisiones de
+arquitectura pendientes"): ownership de datos, hosting y URL pública del
+frontend, descriptor de campos derivado del contrato OpenAPI/Zod del servidor y
+composición del frontend de módulos en `apps/web`.
