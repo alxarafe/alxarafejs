@@ -1,0 +1,54 @@
+<section class="crud-list">
+  <header class="toolbar">
+    <h1>{{ config.title }}</h1>
+    <button type="button" (click)="create.emit()">Nuevo</button>
+  </header>
+
+  @if (loading) {
+    <p class="muted">Cargando…</p>
+  }
+
+  @if (error; as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <table>
+    <thead>
+      <tr>
+        @for (field of config.listFields; track field.name) {
+          <th>{{ field.label }}</th>
+        }
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows; track rowId(row)) {
+        <tr>
+          @for (field of config.listFields; track field.name) {
+            <td>{{ cellValue(row, field) }}</td>
+          }
+          <td class="actions">
+            <button type="button" class="outline" (click)="edit.emit(row)">Editar</button>
+            <button type="button" class="outline danger" (click)="delete.emit(row)">Eliminar</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="config.listFields.length + 1" class="muted">No hay registros</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (pagination; as p) {
+    <footer class="pager">
+      <span class="muted">
+        {{ p.count }} registros · página {{ p.page }}{{ p.totalPages ? ' de ' + p.totalPages : '' }}
+      </span>
+      <div>
+        <button type="button" [disabled]="!p.previousLink" (click)="paged.emit(p.offset - p.limit)">Anterior</button>
+        <button type="button" [disabled]="!p.nextLink" (click)="paged.emit(p.offset + p.limit)">Siguiente</button>
+      </div>
+    </footer>
+  }
+</section>

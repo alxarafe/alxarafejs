@@ -1,0 +1,40 @@
+<form class="crud-form" [formGroup]="formGroup" (ngSubmit)="submit()" novalidate>
+  <h2>{{ isNew ? 'Nuevo' : 'Editar' }} {{ config.title }}</h2>
+
+  @for (field of config.formFields; track field.name) {
+    <label class="field">
+      <span>{{ field.label }}{{ field.required ? '*' : '' }}</span>
+
+      @switch (field.type) {
+        @case ('textarea') {
+          <textarea [formControlName]="field.name" [placeholder]="field.placeholder ?? ''" rows="3"></textarea>
+        }
+        @case ('select') {
+          <select [formControlName]="field.name">
+            <option [ngValue]="null">—</option>
+            @for (option of field.options ?? []; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        }
+        @case ('boolean') {
+          <input type="checkbox" [formControlName]="field.name" />
+        }
+        @case ('number') {
+          <input type="number" [formControlName]="field.name" />
+        }
+        @case ('date') {
+          <input type="date" [formControlName]="field.name" />
+        }
+        @default {
+          <input type="text" [formControlName]="field.name" [placeholder]="field.placeholder ?? ''" />
+        }
+      }
+    </label>
+  }
+
+  <footer class="form-actions">
+    <button type="button" class="outline" (click)="cancel.emit()">Cancelar</button>
+    <button type="submit" [disabled]="formGroup.invalid">Guardar</button>
+  </footer>
+</form>

@@ -1,0 +1,20 @@
+@if (showForm()) {
+  <app-crud-form
+    [config]="config"
+    [model]="editing()"
+    (saved)="onSaved($event)"
+    (cancel)="onCancel()"
+  />
+} @else {
+  <app-crud-list
+    [config]="config"
+    [rows]="rows()"
+    [pagination]="pagination()"
+    [loading]="loading()"
+    [error]="error()"
+    (create)="newContact()"
+    (edit)="editContact($event)"
+    (delete)="deleteContact($event)"
+    (paged)="loadPage($event)"
+  />
+}
