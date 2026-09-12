@@ -22,6 +22,7 @@ const contactsResource: ResourceConfig = {
   formFields: [
     { name: 'name', label: 'Nombre', type: 'text', required: true, placeholder: 'Nombre completo' },
     { name: 'notes', label: 'Notas', type: 'textarea', placeholder: 'Notas opcionales' },
+    { name: 'isCustomer', label: 'Es cliente', type: 'boolean' },
   ],
 };
 

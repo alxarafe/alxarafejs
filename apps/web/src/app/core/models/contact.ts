@@ -2,6 +2,7 @@ export type Contact = {
   id: number;
   name: string;
   notes: string | null;
+  isCustomer: boolean;
   createdAt: string;
   updatedAt: string;
 };
