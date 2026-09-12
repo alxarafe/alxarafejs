@@ -1,9 +1,9 @@
 # Migraciones y caché de módulos
 
-> **Estado:** propuesta de política **validada con prototipo** (septiembre 2026)
-> y pendiente de ratificación. Sustituye a la materialización actual por la que
-> los módulos dejaban sus migraciones en la historia del núcleo
-> (`docs/modules.md` §5a) y corrige TD-11.
+> **Estado:** política **decidida y ratificada** (12-sep-2026), validada con
+> prototipo. Sustituye a la materialización actual por la que los módulos
+> dejaban sus migraciones en la historia del núcleo (`docs/modules.md` §5a) y
+> corrige TD-11. La integración del tooling en la CLI sigue pendiente (sección 7).
 
 ## 1. El problema
 
@@ -129,6 +129,6 @@ sin tocar el motor.
   `MODULES_DIR=…/fixtures/modules CONFIG_PATH=…/fixtures/config.json
   CACHE_DIR=…/fixtures/cache node sync.mjs`
   → `00-core`, `01-…alpha`, `02-…beta`.
-- **Pendiente de integrar** (tras ratificar): comandos `module sync` y
+- **Pendiente de integrar**: comandos `module sync` y
   `module attribute` en `@alxarafe/cli`; apuntar `prisma.config.ts` a la caché;
   regla única de caché en `.gitignore`; tests del runner.
