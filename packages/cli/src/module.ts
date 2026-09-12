@@ -1,10 +1,10 @@
-import { cpSync, existsSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, rmSync, statSync, symlinkSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { ModuleManifest } from "@alxarafe/core";
 import { createModuleManager, readManifest } from "@alxarafe/core";
 
 import { readModulesConfig, writeModulesConfig } from "./config.js";
-import { fail, getRoot, ok, readJsonName, run, warn } from "./helpers.js";
+import { assertValidModuleName, fail, getRoot, isGitUrl, ok, readJsonName, run, runArgs, warn } from "./helpers.js";
 
 const MODULES_DIR = "modules";
 const MODELS_DIR = join("packages", "database", "prisma", "models");
@@ -16,14 +16,6 @@ export interface AddModuleOptions {
 
 export interface RemoveModuleOptions {
 	dropSchema: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Detection helpers
-// ---------------------------------------------------------------------------
-
-function isGitUrl(value: string): boolean {
-	return /^(?:https?|git|ssh):\/\//i.test(value) || /^git@[^:]+:.+\.git$/i.test(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -40,11 +32,12 @@ function materialize(root: string, name: string, from: string): void {
 	mkdirSync(join(root, MODULES_DIR), { recursive: true });
 
 	if (existsSync(from)) {
+		if (!statSync(from).isDirectory()) fail(`'${from}' no es un directorio.`);
 		cpSync(from, target, { recursive: true });
 		return;
 	}
 	if (isGitUrl(from)) {
-		run(`git clone ${from} modules/${name}`);
+		runArgs(["git", "clone", from, join(MODULES_DIR, name)], root);
 		return;
 	}
 	fail(`'${from}' no es ni una ruta local ni una URL git.`);
@@ -99,6 +92,7 @@ export function validateModules(name?: string): void {
 
 export function enableModule(name: string): void {
 	if (!name) fail("Falta el nombre del módulo.");
+	assertValidModuleName(name);
 	const root = getRoot();
 	const initial = createModuleManager({ rootDir: root });
 	const unit = initial.getUnit(name);
@@ -125,6 +119,7 @@ export function enableModule(name: string): void {
 
 export function disableModule(name: string): void {
 	if (!name) fail("Falta el nombre del módulo.");
+	assertValidModuleName(name);
 	const root = getRoot();
 	const initial = createModuleManager({ rootDir: root });
 	const unit = initial.getUnit(name);
@@ -151,6 +146,7 @@ export function disableModule(name: string): void {
 
 export function addModule(name: string, opts: AddModuleOptions): void {
 	if (!name) fail("Falta el nombre del módulo.");
+	assertValidModuleName(name);
 	if (!opts.from) fail("Falta '--from <url|ruta>'.");
 	const root = getRoot();
 	const existing = createModuleManager({ rootDir: root }).getUnit(name);
@@ -189,7 +185,7 @@ export function addModule(name: string, opts: AddModuleOptions): void {
 	const pkgName = readJsonName(join(root, MODULES_DIR, name, "package.json"));
 	if (pkgName) {
 		try {
-			run(`pnpm --filter ${pkgName} run build`, root);
+			runArgs(["pnpm", "--filter", pkgName, "run", "build"], root);
 		} catch {
 			warn(`No se pudo construir '${pkgName}'. Revisa su script 'build'.`);
 		}
@@ -211,6 +207,7 @@ export function addModule(name: string, opts: AddModuleOptions): void {
 
 export function removeModule(name: string, opts: RemoveModuleOptions): void {
 	if (!name) fail("Falta el nombre del módulo.");
+	assertValidModuleName(name);
 	const root = getRoot();
 
 	// Best-effort validation: if the graph is currently invalid (e.g. a
@@ -245,7 +242,7 @@ export function removeModule(name: string, opts: RemoveModuleOptions): void {
 
 	if (opts.dropSchema) {
 		try {
-			run(`pnpm db:migrate -- --name drop_${name.toLowerCase()}_schema`, root);
+			runArgs(["pnpm", "db:migrate", "--", "--name", `drop_${name.toLowerCase()}_schema`], root);
 		} catch {
 			warn("No se pudo crear la migración de borrado. ¿Está levantada la base de datos?");
 		}
