@@ -3,7 +3,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { z } from "zod";
 
-import { requireAuth } from "./guards.js";
+import { requireAuth, requireRole, requireSameUserOrAdmin } from "./guards.js";
 import { userController } from "./userController.js";
 import { GetUserSchema, UserSchema } from "./userModel.js";
 
@@ -28,7 +28,7 @@ userRegistry.registerPath({
 	responses: createApiResponse(PaginatedListSchema(UserSchema), "Success"),
 });
 
-userRouter.get("/", requireAuth, userController.getUsers);
+userRouter.get("/", requireAuth, requireRole("ADMIN"), userController.getUsers);
 
 userRegistry.registerPath({
 	method: "get",
@@ -38,4 +38,4 @@ userRegistry.registerPath({
 	responses: createApiResponse(UserSchema, "Success"),
 });
 
-userRouter.get("/:id", requireAuth, validateRequest(GetUserSchema), userController.getUser);
+userRouter.get("/:id", requireAuth, validateRequest(GetUserSchema), requireSameUserOrAdmin, userController.getUser);

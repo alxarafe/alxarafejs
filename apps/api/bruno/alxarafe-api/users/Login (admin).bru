@@ -1,7 +1,11 @@
 meta {
-  name: Login
+  name: Login (admin)
   type: http
-  seq: 20
+  seq: 52
+}
+
+headers {
+  X-CSRF-Token: {{csrfToken}}
 }
 
 post {

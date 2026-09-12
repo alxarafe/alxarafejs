@@ -64,3 +64,27 @@ export function requireRole(...roles: UserRole[]): RequestHandler {
 		next();
 	};
 }
+
+export const requireSameUserOrAdmin: RequestHandler = (req, res, next) => {
+	if (!req.user) {
+		res.status(StatusCodes.UNAUTHORIZED).send({
+			success: false,
+			message: "Not authenticated",
+			responseObject: null,
+			statusCode: StatusCodes.UNAUTHORIZED,
+		});
+		return;
+	}
+	const { id: userId, role } = req.user;
+	const targetId = Number.parseInt(String(req.params.id), 10);
+	if (role === "ADMIN" || userId === targetId) {
+		next();
+		return;
+	}
+	res.status(StatusCodes.FORBIDDEN).send({
+		success: false,
+		message: "Insufficient permissions",
+		responseObject: null,
+		statusCode: StatusCodes.FORBIDDEN,
+	});
+};

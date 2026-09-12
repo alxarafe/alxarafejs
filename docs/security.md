@@ -23,6 +23,13 @@
 - Se aplica **a nivel de aplicación** (después de la sesión, antes de cualquier router): toda mutación (`POST`/`PUT`/`PATCH`/`DELETE`) con sesión autenticada exige el token, **incluidos los módulos montados en `apps/api`** (ya no solo `/auth`). Login/register quedan exentos (aún no hay sesión).
 - La cookie de sesión es `HttpOnly` + `SameSite=Lax`, lo que limita los vectores de un ataque cross-site.
 
+## Autorización
+
+- **`GET /users`** (listado): solo **ADMIN** (`requireRole("ADMIN")`); cualquier otra sesión recibe `403`.
+- **`GET /users/:id`**: el propio usuario o un **ADMIN** (`requireSameUserOrAdmin`); el resto recibe `403`. La validación del `:id` ocurre antes que la autorización.
+- En el frontend la ruta `/users` usa `adminGuard`: sin sesión redirige a `/login`; con rol distinto de ADMIN, a `/contacts`. La API es siempre la frontera de seguridad real (los guards del servidor mandan).
+- El ownership por recurso de `modules/contacts` (un usuario puede mutar cualquier contacto) queda registrado como deuda en [deuda-tecnica.md](deuda-tecnica.md) (TD-05) para resolver en su repositorio.
+
 ## Contraseñas y tokens
 
 - Contraseñas: **bcryptjs, 12 rondas**. Nunca se devuelven al cliente (`toPublicUser` / modelo OpenAPI sin `passwordHash`).

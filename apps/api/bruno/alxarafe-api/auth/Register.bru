@@ -23,6 +23,7 @@ script:post-response {
     bru.setVar("csrfToken", res.body.responseObject.csrfToken);
     if (res.body.responseObject.user) {
       bru.setVar("userId", res.body.responseObject.user.id);
+      bru.setVar("newUserId", res.body.responseObject.user.id);
     }
   }
 }

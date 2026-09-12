@@ -1,11 +1,16 @@
 meta {
   name: Get user
   type: http
-  seq: 51
+  seq: 54
 }
 
 get {
-  url: {{BASE_URL}}/users/{{userId}}
+  url: {{BASE_URL}}/users/{{newUserId}}
   body: none
   auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
 }

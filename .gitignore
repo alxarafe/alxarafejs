@@ -44,3 +44,6 @@ coverage/
 .vscode/
 .idea/
 .DS_Store
+
+# Trabajo temporal de agentes
+.agent-tmp/

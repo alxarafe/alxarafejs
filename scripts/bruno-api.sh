@@ -171,6 +171,14 @@ bootstrap_user() {
 if [[ "${BRUNO_BOOTSTRAP_USER:-1}" == "1" && -n "$RUN_EMAIL" && -n "$RUN_PASSWORD" ]]; then
   bootstrap_user "$RUN_EMAIL" "$RUN_PASSWORD"
 fi
+# En modo aislado (API propia + TEST_DATABASE_URL) el usuario de pruebas pasa a
+# ser ADMIN para poder ejercitar los endpoints de /users. Al reutilizar una API
+# externa no hay promoción: promueve manualmente RUN_EMAIL si quieres ese flujo.
+if [[ -n "${TEST_DATABASE_URL:-}" ]]; then
+  echo "[bruno] promoviendo a ADMIN: $RUN_EMAIL (BD de test)"
+  printf 'UPDATE "User" SET "role" = '\''ADMIN'\'' WHERE "email" = '\''%s'\'';\n' "$RUN_EMAIL" \
+    | pnpm exec prisma db execute --stdin
+fi
 # NOTA: NEW_EMAIL NO se pre-registra: la colección crea ese usuario vía
 # 'Register' durante la ejecución.
 

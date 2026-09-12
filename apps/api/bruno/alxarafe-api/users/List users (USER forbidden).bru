@@ -1,0 +1,16 @@
+meta {
+  name: List users (USER forbidden)
+  type: http
+  seq: 50
+}
+
+get {
+  url: {{BASE_URL}}/users
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 403
+  res.body.success: eq false
+}
