@@ -19,7 +19,8 @@ const envSchema = z.object({
 	DATABASE_URL: z
 		.string()
 		.url()
-		.refine((url) => url.startsWith("postgres"), "DATABASE_URL must be a PostgreSQL connection string"),
+		.refine((url) => url.startsWith("postgres"), "DATABASE_URL must be a PostgreSQL connection string")
+		.default("postgresql://alxarafe:alxarafe@localhost:5433/alxarafejs?schema=public"),
 
 	REDIS_URL: z.string().url().default("redis://localhost:6379"),
 
