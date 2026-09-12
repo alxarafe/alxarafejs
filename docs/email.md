@@ -4,9 +4,10 @@ Paquete `@alxarafe/email` basado en **nodemailer**.
 
 ## Selección de transporte
 
-- Si **`SMTP_HOST` está vacío** (dev, por defecto en `.env.example`) → **transporte a fichero**: cada correo se escribe como `.eml` en `./emails` (relativo al `cwd`), listo para inspeccionar sin servidor SMTP.
-- Si hay `SMTP_HOST` → transporte SMTP real. `SMTP_PORT=465` activa `secure` (`TLS`); se usan `SMTP_USER`/`SMTP_PASS` para autenticación si están definidos.
+- Si **`SMTP_TRANSPORT="disk"`** o **`SMTP_HOST` vacío** (dev, por defecto en `.env.example`) → **transporte a fichero**: cada correo se escribe como `.eml` en `./emails` (relativo al `cwd`), listo para inspeccionar sin servidor SMTP.
+- Si **`SMTP_TRANSPORT="smtp"`** y hay `SMTP_HOST` → transporte SMTP real. `SMTP_PORT=465` activa `secure` (`TLS`); se usan `SMTP_USER`/`SMTP_PASS` para autenticación si están definidos.
 - El transporte se crea una sola vez y se cachea (`getTransport`).
+- En producción el silencio es imposible: `SMTP_HOST` es **requerido** salvo `SMTP_TRANSPORT="disk"` explícito (el arranque falla a propósito).
 
 ## API
 

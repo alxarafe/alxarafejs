@@ -52,6 +52,7 @@ jobs:
       - name: Preparar .env para Postgres y Redis de test
         run: |
           cat > .env <<'EOF'
+          NODE_ENV="development"
           DATABASE_URL="postgresql://postgres:postgres@localhost:5432/alxarafejs?schema=public"
           REDIS_URL="redis://localhost:6379"
           EOF

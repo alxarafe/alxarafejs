@@ -49,18 +49,21 @@ pnpm alxarafe module remove <nombre> [--drop-schema]  # desinstalar (y opcionalm
 | Variable | Default | Uso |
 |---|---|---|
 | `NODE_ENV` | `development` | `development` \| `production` \| `test`; en producción no se monta `/auth/dev` |
-| `PORT` / `HOST` | `8080` / `localhost` | Bind del servidor y base para URLs de email |
+| `PORT` / `HOST` | `8080` / `localhost` | Bind del servidor (las URLs de email usan `PUBLIC_WEB_URL`, no el bind) |
 | `CORS_ORIGIN` | `http://localhost:8080` | Origen permitido para CORS con credenciales |
 | `COMMON_RATE_LIMIT_WINDOW_MS` | `1000` | Ventana del rate limiter |
 | `COMMON_RATE_LIMIT_MAX_REQUESTS` | `20` | Máx. peticiones por ventana/IP |
 | `DATABASE_URL` | `postgresql://alxarafe:alxarafe@localhost:5433/alxarafejs` | Leída por `prisma.config.ts` (adapter de Prisma 7) |
 | `REDIS_URL` | `redis://localhost:6379` | Store de sesiones |
-| `SESSION_SECRET` | dev-only | Secreto de sesión (≥16 chars, cambiar en prod) |
+| `SESSION_SECRET` | dev-only | Secreto de sesión; en producción **obligatorio** y ≥32 chars (sin default) |
 | `SESSION_NAME` | `sid` | Nombre de la cookie |
 | `SESSION_TTL_SECONDS` | `604800` | TTL de sesión (7 días) |
-| `SMTP_HOST` | *(vacío)* | Si está vacío → correos a `./emails` en vez de SMTP |
+| `SMTP_TRANSPORT` | `smtp` | `smtp` \| `disk`; `disk` fuerza fichero. En producción `SMTP_HOST` es requerido salvo `SMTP_TRANSPORT="disk"` explícito |
+| `SMTP_HOST` | *(vacío)* | Si vacío en dev → correos a `./emails` en vez de SMTP |
 | `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | `587` / — / — | SMTP con autenticación opcional |
 | `EMAIL_FROM` | `no-reply@alxarafe.com` | Remitente de todos los correos |
+| `PUBLIC_WEB_URL` | `http://localhost:8080` | URL pública (base de enlaces de email). En producción **obligatoria**, independiente del bind |
+| `TRUST_PROXY` | `false` | Política de proxies de Express. En producción **obligatoria** (explicitar `false`, hops, `loopback`, IP/red) |
 
 ## Scripts (raíz)
 

@@ -58,7 +58,7 @@ let cachedTransport: Transporter | undefined;
 
 function getTransport(): Transporter {
 	if (!cachedTransport) {
-		cachedTransport = env.SMTP_HOST ? createSmtpTransport() : createDevTransport();
+		cachedTransport = env.SMTP_TRANSPORT === "disk" || !env.SMTP_HOST ? createDevTransport() : createSmtpTransport();
 	}
 	return cachedTransport;
 }
@@ -74,10 +74,12 @@ export async function sendEmail(options: SendMailOptions): Promise<void> {
 
 	const info = await getTransport().sendMail(mailOptions);
 
-	if (env.SMTP_HOST) {
+	if (env.SMTP_TRANSPORT === "smtp" && env.SMTP_HOST) {
 		logger.info({ messageId: info.messageId }, `Email sent to ${options.to}`);
 	} else {
-		logger.info(`[DEV MAIL] ${options.subject} -> ${options.to} (written to ${info.path ?? "dev transport"})`);
+		logger.info(
+			`[${env.SMTP_TRANSPORT === "disk" ? "DISK" : "DEV"} MAIL] ${options.subject} -> ${options.to} (written to ${info.path ?? "dev transport"})`,
+		);
 	}
 }
 

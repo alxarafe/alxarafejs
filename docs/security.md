@@ -44,6 +44,6 @@
 
 ## Producción
 
-- Cambiar `SESSION_SECRET` y `SMTP_*` (ver `.env.example`).
-- Montar detrás de HTTPS real (el `appBaseUrl` usa `https` cuando `NODE_ENV=production`).
+- Cambiar `SESSION_SECRET` (≥32 chars sin default) y `SMTP_*` (ver `.env.example`).
+- Publicar bajo HTTPS real: `PUBLIC_WEB_URL` (base de enlaces de email) y `TRUST_PROXY` son **obligatorias** en producción; sin ellas el arranque falla a propósito.
 - El router `/auth/dev` **no se monta** en producción.

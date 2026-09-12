@@ -10,7 +10,7 @@ const BCRYPT_ROUNDS = 12;
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1h
 
-export const appBaseUrl = `${env.isProduction ? "https" : "http"}://${env.HOST}:${env.PORT}`;
+export const appBaseUrl = env.PUBLIC_WEB_URL.replace(/\/+$/, "");
 
 function nowPlus(ms: number): Date {
 	return new Date(Date.now() + ms);

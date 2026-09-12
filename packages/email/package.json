@@ -23,7 +23,7 @@
 		"nodemailer": "^10.0.1"
 	},
 	"devDependencies": {
-		"@types/node": "^22.0.0",
+		"@types/node": "^24.0.0",
 		"@types/nodemailer": "^8.0.1",
 		"tsup": "^8.5.0"
 	}

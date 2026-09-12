@@ -31,6 +31,18 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Express
 	const app: Express = express();
 	const moduleManager = options.moduleManager ?? createModuleManager();
 
+	// How many proxies to trust (needed for secure cookies behind a reverse proxy).
+	const rawTrustProxy = env.TRUST_PROXY.trim();
+	const trustProxy =
+		rawTrustProxy === "true"
+			? true
+			: rawTrustProxy === "false"
+				? false
+				: /^\d+$/.test(rawTrustProxy)
+					? Number(rawTrustProxy)
+					: rawTrustProxy;
+	app.set("trust proxy", trustProxy);
+
 	// Middlewares
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));

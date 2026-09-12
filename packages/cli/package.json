@@ -17,7 +17,7 @@
 		"@alxarafe/core": "workspace:*"
 	},
 	"devDependencies": {
-		"@types/node": "^22.0.0",
+		"@types/node": "^24.0.0",
 		"tsup": "^8.5.0"
 	}
 }
