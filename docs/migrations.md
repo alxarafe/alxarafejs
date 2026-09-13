@@ -20,14 +20,14 @@ donde **cada módulo posea su propia historia de migraciones**.
 
 ## 2. La propuesta: caché de módulos
 
-Una carpeta **gitignored** (`.alxarafe-cache/`) es el único punto por el que los
+Una carpeta **gitignored** (`.cache/`) es el único punto por el que los
 módulos entregan artefactos al núcleo. No se edita a mano: se **borra y se
 regenera por completo** en cada activación/desactivación/actualización de
 módulos. Así, su contenido es una función pura de (estado del núcleo + módulos
 activos + commits de sus repos). Nunca hay estado residual.
 
 ```
-.alxarafe-cache/
+.cache/
   manifest.json          # trazabilidad: qué se construyó, de qué repo@commit
   prisma/                # esquema multiarchivo: schema.prisma + models/<módulo>.prisma
   migrations/            # historia fusionada y ordenada, base de `prisma migrate deploy`
@@ -123,7 +123,7 @@ sin tocar el motor.
 
 ## 7. Estado de la implementación
 
-- **Validado** con prototipo (`.agent-tmp/cache-prototype/`): `sync.mjs` +
+- **Validado** con prototipo (`.cache/cache-prototype/`): `sync.mjs` +
   `attribute.mjs` + motor genérico `lib/cache-core.mjs` + artefactos en
   `lib/artifacts.mjs`. Probar la ordenación:
   `MODULES_DIR=…/fixtures/modules CONFIG_PATH=…/fixtures/config.json

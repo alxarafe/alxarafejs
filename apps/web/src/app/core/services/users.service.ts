@@ -13,6 +13,11 @@ export interface UserListOptions {
   orderBy?: string;
 }
 
+export interface UserUpdate {
+  name?: string;
+  email?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private readonly http = inject(HttpClient);
@@ -29,5 +34,13 @@ export class UsersService {
       params = params.set('$orderby', options.orderBy);
     }
     return this.http.get<ServiceResponse<PaginatedList<User> | null>>('/api/users', { params });
+  }
+
+  get(id: number): Observable<ServiceResponse<User | null>> {
+    return this.http.get<ServiceResponse<User | null>>(`/api/users/${id}`);
+  }
+
+  update(id: number, data: UserUpdate): Observable<ServiceResponse<User | null>> {
+    return this.http.patch<ServiceResponse<User | null>>(`/api/users/${id}`, data);
   }
 }

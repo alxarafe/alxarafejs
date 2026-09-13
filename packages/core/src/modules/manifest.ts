@@ -18,6 +18,11 @@ const PrismaSchema = z.object({
 	models: z.array(z.string()),
 });
 
+const WebSchema = z.object({
+	mountPath: z.string().startsWith("/"),
+	entry: z.string(),
+});
+
 export const ModuleManifestSchema = z
 	.object({
 		name: z.string().min(1),
@@ -27,6 +32,7 @@ export const ModuleManifestSchema = z
 		dependsOn: z.array(z.string()).default([]),
 		prisma: PrismaSchema.optional(),
 		server: ServerSchema.optional(),
+		web: WebSchema.optional(),
 	})
 	.strict();
 

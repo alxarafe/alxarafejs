@@ -36,8 +36,9 @@ export class LoginPage {
     this.auth.login(email, password).subscribe({
       next: (res) => {
         this.submitting.set(false);
-        if (res.success) {
-          this.router.navigate(['/users']);
+        if (res.success && res.responseObject) {
+          const user = res.responseObject.user;
+          this.router.navigate(user.role === 'ADMIN' ? ['/users'] : ['/profile']);
         } else {
           this.error.set(res.message);
         }

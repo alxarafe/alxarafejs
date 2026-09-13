@@ -114,7 +114,7 @@ una instalación limpia del núcleo no trae módulos.
   (`modules/<nombre>/`): fragmento Prisma, historia propia de migraciones
   (`database/prisma/migrations/`, mirror `prisma/migrations/`) y frontend. El
   núcleo no trackea ningún artefacto de módulo. Las piezas que Prisma necesita
-  se ensamblan en una caché local fuera de git (`.alxarafe-cache/`), regenerada
+  se ensamblan en una caché local fuera de git (`.cache/`), regenerada
   por completo por `module sync` al añadir, activar, desactivar o actualizar un
   módulo: núcleo con prefijo `00-`, módulos `01-`, `02-`, … en orden de
   `dependsOn`.

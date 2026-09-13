@@ -26,6 +26,14 @@ modules/*
 # Module activation state — per-developer (created by `module add`/`enable`).
 config/modules.json
 
+# Local feature-module cache — assembled by `alxarafe module sync`
+# (schema, migrations and other module artifacts; see docs/migrations.md).
+.cache/
+
+# Web de módulos: rutas generadas desde .cache/manifest.json (nunca se
+# versionan; en un clon limpio este archivo no existe o está vacío).
+apps/web/src/app/module-routes.generated.ts
+
 # Development email files
 emails/*
 !emails/.gitkeep

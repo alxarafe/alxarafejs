@@ -11,8 +11,8 @@ export const guestGuard: CanActivateFn = () => {
   return auth.me().pipe(
     map((res) => {
       const user = res.success && res.responseObject ? res.responseObject : null;
-      if (user?.role === 'ADMIN') {
-        router.navigate(['/users']);
+      if (user) {
+        router.navigate([user.role === 'ADMIN' ? '/users' : '/profile']);
         return false;
       }
       return true;

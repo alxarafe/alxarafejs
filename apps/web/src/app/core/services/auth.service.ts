@@ -63,4 +63,8 @@ export class AuthService {
     this._user.set(null);
     this.csrfTokenValue = null;
   }
+
+  setCurrentUser(user: User): void {
+    this._user.set(user);
+  }
 }

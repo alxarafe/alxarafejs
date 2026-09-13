@@ -1,0 +1,28 @@
+<section class="profile">
+  <div class="toolbar">
+    <h1>Profile</h1>
+    <button class="outline" type="button" (click)="logout()">Sign out</button>
+  </div>
+
+  @if (error(); as error) {
+    <p class="error">{{ error }}</p>
+  }
+
+  @if (user(); as user) {
+    <form class="card" (ngSubmit)="save(name.value, email.value)">
+      <label for="name">Name</label>
+      <input #name id="name" type="text" [value]="user.name" required minlength="2" maxlength="100" />
+
+      <label for="email">Email</label>
+      <input #email id="email" type="email" [value]="user.email" required />
+
+      @if (user.emailVerifiedAt === null) {
+        <p class="muted">Your email is unverified. Check your inbox for the verification link.</p>
+      }
+
+      <button type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save changes' }}</button>
+    </form>
+  } @else if (!error()) {
+    <p class="muted">Loading…</p>
+  }
+</section>
