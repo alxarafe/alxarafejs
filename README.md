@@ -1,6 +1,7 @@
 # Alxarafe JS — Monorepo
 
 ![Node.js](https://img.shields.io/badge/Node.js-24-green?style=flat-square)
+![Angular](https://img.shields.io/badge/Angular-22-DD0031?style=flat-square&logo=angular&logoColor=white)
 ![CI](https://github.com/alxarafe/alxarafejs/actions/workflows/ci.yml/badge.svg)
 ![Bruno API tests](https://github.com/alxarafe/alxarafejs/actions/workflows/bruno.yml/badge.svg)
 ![Static Analysis](https://img.shields.io/badge/static%20analysis-TypeScript%20%2B%20Biome-blue?style=flat-square)
