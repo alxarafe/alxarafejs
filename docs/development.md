@@ -8,6 +8,21 @@
 
 ## Puesta en marcha
 
+Dependencias externas: **PostgreSQL** y **Redis** en `localhost` (ver `.env`).
+El proyecto usa contenedores con nombres fijos:
+
+```bash
+docker start alxarafejs-postgres   # PostgreSQL → localhost:5433 (user alxarafe/alxarafe, db alxarafejs)
+docker start alxarafe-redis        # Redis → localhost:6379 (imagen redis:7-alpine, la misma que CI)
+```
+
+> Si los contenedores no existen aún (primera vez), créalos una vez:
+>
+> ```bash
+> docker run -d --name alxarafejs-postgres -e POSTGRES_USER=alxarafe -e POSTGRES_PASSWORD=alxarafe -e POSTGRES_DB=alxarafejs -p 5433:5432 postgres:16-alpine
+> docker run -d --name alxarafe-redis -p 6379:6379 redis:7-alpine
+> ```
+
 ```bash
 git clone git@github.com:alxarafe/alxarafejs.git   # viene SIN módulos: modules/ está vacío en git
 pnpm install                # instala dependencias y genera el cliente Prisma (postinstall)
@@ -16,12 +31,38 @@ pnpm db:migrate             # crea/esquematiza la base de datos
 pnpm start:dev              # API en http://localhost:8080 (tsx watch)
 ```
 
+El cliente web se arranca en otra terminal (su proxy envía `/api` → `:8080`,
+así que la API debe estar arriba):
+
+```bash
+pnpm --filter @alxarafe/web start   # http://localhost:4200 (ng serve, proxy → 8080)
+```
+
 Los módulos se instalan cuando los necesites (solo quedan localmente, nunca
 se trackean en git):
 
 ```bash
 pnpm alxarafe module add contacts --from git@github.com:alxarafe/alxarafejs-contacts.git
 ```
+
+## Parada
+
+- **Ctrl+C** en los procesos en primer plano detiene la API (`tsx watch`) y la
+  web (`ng serve`).
+- La API apaga de forma ordenada al recibir **SIGINT/SIGTERM**
+  (`apps/api/src/index.ts`): deja de aceptar conexiones, cierra las
+  keep-alive, desconecta Redis y Prisma y sale con código `0` (fuerza la salida
+  con `1` solo si el cierre excede 10 s). En producción, `docker stop` envía
+  SIGTERM y recorre el mismo camino.
+- **Contenedores**: `docker stop alxarafejs-postgres alxarafe-redis`.
+- Si hay procesos en segundo plano, termínalos por puerto (evita `pkill -f` con
+  la propia cadena del comando, se podría matar a sí mismo):
+  ```bash
+  lsof -ti :8080 | xargs kill   # API
+  lsof -ti :4200 | xargs kill   # web dev server
+  ```
+- Conviene parar API/web **antes** que los contenedores para no encolar
+  sesiones ni consultas contra servicios caídos.
 
 ## Módulos (plugins)
 

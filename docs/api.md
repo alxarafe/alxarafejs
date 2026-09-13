@@ -1,6 +1,6 @@
 # API
 
-Entorno de desarrollo: `http://localhost:8080`. El spec OpenAPI 3.0 se sirve en `/swagger.json` y la UI en `/`.
+Entorno de desarrollo: `http://localhost:8080`. El spec OpenAPI 3.0 se sirve en `/swagger.json` y la UI en `/swagger`.
 
 ## Formato de respuesta estándar
 
@@ -20,7 +20,7 @@ Toda respuesta (éxito o error) usa el envelope `ServiceResponse`:
 - `responseObject`: el dato de dominio. En listas paginadas es `{ data, pagination }` (ver abajo).
 - `statusCode`: mismo valor que el HTTP status de la respuesta.
 
-Los controllers y guards construyen estas respuestas con `ServiceResponse.success()` / `ServiceResponse.failure()` (no hay respuestas en texto plano excepto el 404 de rutas no encontradas).
+Los controllers y guards construyen estas respuestas con `ServiceResponse.success()` / `ServiceResponse.failure()`; también el `errorHandler` (404 y errores no capturados) responde con el envelope, nunca HTML.
 
 ## Colecciones y paginación (estilo OData)
 
@@ -89,7 +89,7 @@ Un filtro/orden inválido responde **400** con el mensaje del error (`Invalid $f
 
 | Método | Ruta | Auth | Descripción |
 |---|---|---|---|
-| `GET` | `/health-check` | No | Estado del servicio (`"Service is healthy"`) |
+| `GET` | `/health-check` | No | Probe de readiness: comprueba **Redis** y **BD**, responde `200` (`"Service is healthy"`) o `503` (`"Service is not ready"`) con `responseObject.checks = { redis, database }` (`"ok"`/`"unavailable"`). Se sirve antes de sesión/log para seguir respondiendo aunque Redis caiga |
 
 ### Auth
 
@@ -128,6 +128,7 @@ En `production` este router no se monta.
 - **Filtro/orden inválido**: `400` con `Invalid $filter: ...` / `Invalid $orderby: ...`.
 - **No autenticado**: `401`.
 - **Sin permisos** (`requireRole`): `403`.
-- **No encontrado**: `404`.
+- **No encontrado**: `404` (rutas desconocidas; envelope con `"Route not found"`).
 - **Conflictos de negocio** (p. ej. email ya registrado): `409`.
-- **Errores internos**: `500` (registrados en pino).
+- **No listo** (dependencia de health caída): `503`.
+- **Errores internos**: `500`, con mensaje genérico (`"Internal Server Error"`) en producción y el detalle en los logs bajo el `request-id` (en desarrollo el message llega al cliente).

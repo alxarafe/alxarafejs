@@ -25,6 +25,8 @@ import { createOpenAPIRouter } from "./openAPIRouter.js";
 export interface CreateAppOptions {
 	/** Injectable manager (tests use a stub); defaults to the real workspace. */
 	moduleManager?: ModuleManager;
+	/** Injectable health router (tests stub the probes); defaults to the real one. */
+	healthRouter?: Router;
 }
 
 export async function createApp(options: CreateAppOptions = {}): Promise<Express> {
@@ -43,12 +45,29 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Express
 					: rawTrustProxy;
 	app.set("trust proxy", trustProxy);
 
+	// Dynamic API responses must never be cached nor revalidated: an ETag /
+	// 304 on GET /auth/me comes back with an empty body (FetchBackend) and the
+	// web auth guard silently bounces to /login.
+	app.disable("etag");
+
 	// Middlewares
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
 	app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 	app.use(helmet());
 	app.use(rateLimiter);
+
+	// API responses are dynamic and must not be cached by the browser: a 304 on
+	// /auth/me would come back with an empty body (FetchBackend) and the auth
+	// guard would silently bounce the user to /login.
+	app.use((_req, res, next) => {
+		res.set("Cache-Control", "no-store");
+		next();
+	});
+
+	// Health is mounted before session/logging: it must stay reachable (and
+	// report readiness) even when Redis is down, and its pings pollute no logs.
+	app.use("/health-check", options.healthRouter ?? healthCheckRouter);
 
 	// Request logging
 	app.use(requestLogger);
@@ -57,12 +76,14 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Express
 	app.use(sessionMiddleware);
 
 	// CSRF double-submit, app-wide: every state-changing request on an
-	// authenticated session must include X-CSRF-Token (login/register are
-	// exempt because no session exists yet).
+	// authenticated session must include X-CSRF-Token. Unauthenticated
+	// requests (fresh session, first login/register) are safe by definition —
+	// `csrfProtection` only enforces when `session.userId` exists. The web app
+	// fetches the token at bootstrap via GET /auth/csrf so state-changing calls
+	// keep working after a reload over a surviving session cookie.
 	app.use(csrfProtection);
 
 	// Infra routes (packages, always mounted)
-	app.use("/health-check", healthCheckRouter);
 	if (env.isDevelopment) {
 		app.use("/auth/dev", authDevRouter);
 	}

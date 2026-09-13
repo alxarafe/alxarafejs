@@ -26,7 +26,7 @@ es opinión. Cuando se decide **no** pagarla, cambia a `Aceptada` y se explica.
 | TD-10 | P1 | Abierta | Email / Tests | `EMAILS_DIR` no lo respeta el emisor: `@alxarafe/email` escribe siempre en `<cwd>/emails`, mientras el runner Bruno lee de `EMAILS_DIR` | `packages/email/src/index.ts:14`; `packages/auth/src/authDevRouter.ts:10` |
 | TD-11 | P1 | En curso | Datos | Falta tooling reproducible de migraciones de módulos. **En curso 12-sep-2026**: adoptada la caché de módulos ([`docs/migrations.md`](migrations.md)) — cada módulo posee su historia y `module sync` regenera la caché fusionada para deploy/push. Pendiente: integrar `module sync`/`module attribute` en la CLI, apuntar `prisma.config.ts` a la caché y los tests del runner | `docs/migrations.md`; `packages/cli/src/module.ts:200-203,246-252` |
 | TD-12 | P1 | En curso | Tests / CI | Los 65 tests cubren core y contacts; faltan tests de auth, users, session, CSRF, CLI, Prisma real, startup y shutdown. **En curso 12-sep-2026**: se añadió `.github/workflows/ci.yml` (cadena limpia) y se fijó el runner web (Jasmine/Karma con `ng test`, sección 6 de la política); queda cubrir los huecos de cobertura | `vite.config.mts`; `.github/workflows/ci.yml` |
-| TD-13 | P1 | Abierta | Runtime | `app.listen` arranca antes de confirmar `redisClient.connect()` (sin `catch`); health solo comprueba que Express responde; el manejador final rompe el envelope; shutdown fuerza `process.exit` | `apps/api/src/index.ts:10-29`; `apps/api/src/healthCheckRouter.ts:16-18` |
+| TD-13 | P1 | Resuelta | Runtime | `app.listen` arranca antes de confirmar `redisClient.connect()` (sin `catch`); health solo comprueba que Express responde; el manejador final rompe el envelope; shutdown fuerza `process.exit`. **Resuelta 13-sep-2026**: el listener espera a Redis (con timeout y catch); `/health-check` es un probe de readiness (Redis + BD, `200`/`503` con `responseObject.checks`) montado antes de sesión/log (no lo tumba Redis caído); `errorHandler` responde 404 y errores no capturados con el envelope `ServiceResponse` (mensaje genérico en producción); shutdown graceful cierra conexiones keep-alive y sale `0` (fuerza `exit(1)` solo si el cierre excede 10 s) | `apps/api/src/index.ts`; `apps/api/src/healthCheckRouter.ts`; `packages/core/src/middleware/errorHandler.ts` |
 | TD-14 | P2 | Abierta | Contacts | Casteos `as Promise<...>` silencian posibles divergencias con los tipos Prisma generados | `modules/contacts/src/contactRepository.ts:84,88,96,110,123,145` |
 | TD-15 | P2 | Aceptada | Contacts | El puerto `ContactRepository` filtra tipos Prisma en su firma. **Aceptada**: pasó el criterio anti-abstracción (un solo adaptador); pagarla = definir DTOs propios y desacoplar el servicio, solo si aparece un segundo adaptador | `modules/contacts/src/contactRepository.ts:67` |
 | TD-16 | P2 | Abierta | Contacts | Los tests usan `as never` para el repositorio falso; habría que tiparlo contra la interfaz `ContactRepository` para eliminar el desajuste | `modules/contacts/src/__tests__/contactService.test.ts:73` |
@@ -47,6 +47,15 @@ las referencia desde `.agents/development-policy.md` §9):
 - **Descriptor de campos del frontend derivado del contrato OpenAPI/Zod del
   servidor**, para no duplicar metadatos (hoy el descriptor replica
   `contactModel.ts`).
+- **Límites y etiquetas centralizados en la definición del campo** (estilo SAP
+  CDS, v.g. `@limit 0-10`): restricciones y labels viven una sola vez junto a la
+  tabla/vista (p. ej. `///` doc-comments del `.prisma`), y el generador de caché
+  las emite como Zod + OpenAPI + validadores Angular + `CHECK` de BD. Registrado
+  12-sep-2026; no implementar sin acordarlo (extiende la decisión anterior).
+- **Diccionarios compartidos Prisma/Angular**: un diccionario único (etiquetas,
+  i18n y datos de referencia) que puedan consumir tanto Prisma (modelo, seeds,
+  defaults) como el frontend (labels, traducciones), para no duplicar el
+  vocabulario. Registrado 12-sep-2026; no implementar aún.
 - **Composición del frontend de módulos en `apps/web`** sin romper el build de
   un clon limpio (candidata: artefacto `web/` de la caché, `docs/migrations.md` §5).
 

@@ -11,6 +11,10 @@ export function createOpenAPIRouter(openAPIDocument: OpenAPIDocument): Router {
 		res.send(openAPIDocument);
 	});
 
-	router.use("/", swaggerUi.serve, swaggerUi.setup(openAPIDocument));
+	// Confined to a dedicated prefix: `serve`+`setup` answered every request
+	// when mounted on "/", shadowing unknown routes with the Swagger UI
+	// (200 HTML instead of the 404 envelope). Under "/swagger" Express strips
+	// the mount path and the middleware only serves the UI and its own assets.
+	router.use("/swagger", swaggerUi.serve, swaggerUi.setup(openAPIDocument));
 	return router;
 }

@@ -84,14 +84,15 @@ Express app (apps/api/src/app.ts)
    2. cors(credentials)                  → origen permitido
    3. helmet()                           → cabeceras de seguridad
    4. rateLimiter                        → límite por IP
-   5. requestLogger                      → request-id + pino-http
-   6. sessionMiddleware                  → sesión Redis (cookie) + CSRF token
-   7. Router
-       │  /health-check  /auth  /users  (+ /auth/dev solo en desarrollo)
+   5. /health-check                      → probe de readiness (Redis + BD), antes de sesión/log
+   6. requestLogger                      → request-id + pino-http
+   7. sessionMiddleware                  → sesión Redis (cookie) + CSRF token
+   8. Router
+       │  (/health-check ya resuelto arriba)  /auth  /users  (+ /auth/dev solo en desarrollo)
        │  └─ Módulos de negocio activos (p. ej. /contacts), cargados por el gestor
        │  └─ guards → validateRequest(Zod) → controller → service → repository
-   8. openAPIRouter                      → Swagger UI y /swagger.json
-   9. errorHandler                       → 404 + registro de errores
+   9. openAPIRouter                      → Swagger UI y /swagger.json
+  10. errorHandler                       → 404 + errores no capturados siempre en envelope JSON
 ```
 
 Los **servicios** devuelven `ServiceResponse` (nunca lanzan para errores de negocio); el **controller** solo hace `res.status(sr.statusCode).send(sr)`. Esto uniformiza el contrato de la API.
