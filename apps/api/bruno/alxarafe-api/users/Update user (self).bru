@@ -1,0 +1,28 @@
+meta {
+  name: Update user (self)
+  type: http
+  seq: 55
+}
+
+patch {
+  url: {{BASE_URL}}/users/{{userId}}
+  body: json
+  auth: none
+}
+
+headers {
+  X-CSRF-Token: {{csrfToken}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{NAME}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.success: eq true
+  res.body.responseObject.name: eq {{NAME}}
+}

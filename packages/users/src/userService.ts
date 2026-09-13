@@ -158,6 +158,44 @@ export class UserService {
 			return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+	// Updates the profile fields of a user (name and/or email). Changing the
+	// email resets verification, since the new address has not been verified.
+	async updateUser(
+		id: number,
+		data: { name?: string; email?: string },
+	): Promise<ServiceResponse<User | null>> {
+		try {
+			const existing = await this.userRepository.findByIdAsync(id);
+			if (!existing) {
+				return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
+			}
+
+			const changes: Prisma.UserUpdateInput = {};
+			if (data.name !== undefined) {
+				changes.name = data.name;
+			}
+
+			const emailChanged = data.email !== undefined && data.email.toLowerCase() !== existing.email;
+			if (emailChanged) {
+				const normalizedEmail = data.email!.toLowerCase();
+				const duplicate = await this.userRepository.findByEmailAsync(normalizedEmail);
+				if (duplicate && duplicate.id !== id) {
+					return ServiceResponse.failure("Email is already in use", null, StatusCodes.CONFLICT);
+				}
+				changes.email = normalizedEmail;
+				// A changed address is unverified until proven otherwise.
+				changes.emailVerifiedAt = null;
+			}
+
+			const updated = await this.userRepository.updateAsync(id, changes);
+			return ServiceResponse.success<User>("User updated", toPublicUser(updated));
+		} catch (ex) {
+			const errorMessage = `Error updating user with id ${id}: ${(ex as Error).message}`;
+			logger.error(errorMessage);
+			return ServiceResponse.failure("An error occurred while updating user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
+		}
+	}
 }
 
 export const userService = new UserService();

@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { requireAuth, requireRole, requireSameUserOrAdmin } from "./guards.js";
 import { userController } from "./userController.js";
-import { GetUserSchema, UserSchema } from "./userModel.js";
+import { GetUserSchema, UpdateUserSchema, UserSchema } from "./userModel.js";
 
 export const userRegistry = new OpenAPIRegistry();
 export const userRouter: Router = express.Router();
@@ -39,3 +39,16 @@ userRegistry.registerPath({
 });
 
 userRouter.get("/:id", requireAuth, validateRequest(GetUserSchema), requireSameUserOrAdmin, userController.getUser);
+
+userRegistry.registerPath({
+	method: "patch",
+	path: "/users/{id}",
+	tags: ["User"],
+	request: {
+		params: GetUserSchema.shape.params,
+		body: { content: { "application/json": { schema: UpdateUserSchema.shape.body } } },
+	},
+	responses: createApiResponse(UserSchema, "User updated"),
+});
+
+userRouter.patch("/:id", requireAuth, validateRequest(UpdateUserSchema), requireSameUserOrAdmin, userController.updateUser);
