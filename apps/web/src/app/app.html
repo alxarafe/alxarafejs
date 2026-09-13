@@ -3,9 +3,9 @@
     <a routerLink="/users">Usuarios</a>
     <label class="theme-toggle">
       <span class="muted">Tema</span>
-      <select [value]="themeService.current()" (change)="setTheme($event)">
+      <select (change)="setTheme($event)">
         @for (theme of themeService.Themes; track theme.value) {
-          <option [attr.value]="theme.value">{{ theme.label }}</option>
+          <option [attr.value]="theme.value" [selected]="themeService.current() === theme.value">{{ theme.label }}</option>
         }
       </select>
     </label>

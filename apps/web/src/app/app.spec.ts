@@ -31,4 +31,13 @@ describe('App', () => {
     const labels = Array.from(select.options).map((option) => option.textContent?.trim());
     expect(labels).toEqual(['Default (System)', 'Alternative', 'Cyberpunk', 'High Contrast', 'Vintage']);
   });
+
+  it('should reflect the applied theme in the selector, not just the first option', () => {
+    localStorage.setItem('alxarafe.theme', 'vintage');
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const select = (fixture.nativeElement as HTMLElement).querySelector('.theme-toggle select') as HTMLSelectElement;
+    expect(select.value).toBe('vintage');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('vintage');
+  });
 });
