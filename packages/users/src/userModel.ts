@@ -32,5 +32,8 @@ export const UpdateUserSchema = z.object({
 			name: z.string().trim().min(2, "Name must be at least 2 characters").max(100).optional(),
 			email: commonValidations.email.optional(),
 		})
-		.refine(({ name, email }) => name !== undefined || email !== undefined, "At least one of name or email is required"),
+		.refine(
+			({ name, email }) => name !== undefined || email !== undefined,
+			"At least one of name or email is required",
+		),
 });

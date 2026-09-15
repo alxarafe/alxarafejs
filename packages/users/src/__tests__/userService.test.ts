@@ -1,10 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { StatusCodes } from "http-status-codes";
-
 import type { User as PrismaUser } from "@alxarafe/database";
-
-import { UserService } from "../userService.js";
+import { StatusCodes } from "http-status-codes";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UserRepository } from "../userRepository.js";
+import { UserService } from "../userService.js";
 
 function buildUser(overrides: Partial<PrismaUser> = {}): PrismaUser {
 	return {
@@ -80,9 +78,7 @@ describe("UserService.updateUser", () => {
 	it("normalizes the new email, resets verification and checks duplicates case-insensitively", async () => {
 		vi.mocked(repo.findByIdAsync).mockResolvedValue(buildUser());
 		vi.mocked(repo.findByEmailAsync).mockResolvedValue(null);
-		vi.mocked(repo.updateAsync).mockResolvedValue(
-			buildUser({ email: "grace@hoppers.org", emailVerifiedAt: null }),
-		);
+		vi.mocked(repo.updateAsync).mockResolvedValue(buildUser({ email: "grace@hoppers.org", emailVerifiedAt: null }));
 		const service = new UserService(repo);
 
 		const res = await service.updateUser(1, { email: "Grace@Hoppers.org" });

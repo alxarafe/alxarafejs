@@ -51,4 +51,10 @@ userRegistry.registerPath({
 	responses: createApiResponse(UserSchema, "User updated"),
 });
 
-userRouter.patch("/:id", requireAuth, validateRequest(UpdateUserSchema), requireSameUserOrAdmin, userController.updateUser);
+userRouter.patch(
+	"/:id",
+	requireAuth,
+	validateRequest(UpdateUserSchema),
+	requireSameUserOrAdmin,
+	userController.updateUser,
+);

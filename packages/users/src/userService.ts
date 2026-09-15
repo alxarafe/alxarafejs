@@ -161,10 +161,7 @@ export class UserService {
 
 	// Updates the profile fields of a user (name and/or email). Changing the
 	// email resets verification, since the new address has not been verified.
-	async updateUser(
-		id: number,
-		data: { name?: string; email?: string },
-	): Promise<ServiceResponse<User | null>> {
+	async updateUser(id: number, data: { name?: string; email?: string }): Promise<ServiceResponse<User | null>> {
 		try {
 			const existing = await this.userRepository.findByIdAsync(id);
 			if (!existing) {
@@ -178,7 +175,7 @@ export class UserService {
 
 			const emailChanged = data.email !== undefined && data.email.toLowerCase() !== existing.email;
 			if (emailChanged) {
-				const normalizedEmail = data.email!.toLowerCase();
+				const normalizedEmail = (data.email ?? "").toLowerCase();
 				const duplicate = await this.userRepository.findByEmailAsync(normalizedEmail);
 				if (duplicate && duplicate.id !== id) {
 					return ServiceResponse.failure("Email is already in use", null, StatusCodes.CONFLICT);

@@ -7,10 +7,7 @@ const { updateUserMock } = vi.hoisted(() => ({ updateUserMock: vi.fn() }));
 
 vi.mock("../guards.js", () => ({
 	requireAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
-	requireRole:
-		() =>
-		(_req: unknown, _res: unknown, next: () => void) =>
-			next(),
+	requireRole: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 	requireSameUserOrAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
